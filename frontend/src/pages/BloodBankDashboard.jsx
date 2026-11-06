@@ -8,6 +8,8 @@ const BloodBankDashboard = () => {
   const [bloodBank, setBloodBank] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState([]);
+  const [autoRequests, setAutoRequests] = useState([]);
+  const [scanning, setScanning] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
 
   // Blood bank registration form state
@@ -34,6 +36,7 @@ const BloodBankDashboard = () => {
       } else {
         setInventory(bloodGroups.map((bg) => ({ bloodGroup: bg, unitsAvailable: 0 })));
       }
+      fetchAutoRequests(res.data._id);
     } catch (err) {
       if (err.response?.status !== 404) {
         console.error('Error fetching blood bank:', err);
@@ -52,6 +55,16 @@ const BloodBankDashboard = () => {
     }
   };
 
+  const fetchAutoRequests = async (bbId = bloodBank?._id) => {
+    if (!bbId) return;
+    try {
+      const res = await API.get(`/bloodbanks/${bbId}/auto-requests`);
+      setAutoRequests(res.data);
+    } catch (err) {
+      console.error('Error fetching automated requests:', err);
+    }
+  };
+
   useEffect(() => {
     fetchMyBloodBank();
     fetchReservations();
@@ -59,14 +72,29 @@ const BloodBankDashboard = () => {
 
   useEffect(() => {
     if (!socket || !bloodBank) return;
+
     const handleNewRes = (data) => {
       if (data.facilityId === bloodBank._id) {
         fetchReservations();
         setStatusMsg({ text: 'New blood reservation received!', type: 'info' });
       }
     };
+
+    const handleLowStockAlert = (data) => {
+      fetchAutoRequests(bloodBank._id);
+      setStatusMsg({
+        text: `⚡ Automated donor request raised for ${data.bloodGroup} (Stock: ${data.currentUnits} units)!`,
+        type: 'warning'
+      });
+    };
+
     socket.on('reservationCreated', handleNewRes);
-    return () => socket.off('reservationCreated', handleNewRes);
+    socket.on('lowStockAutoRequest', handleLowStockAlert);
+
+    return () => {
+      socket.off('reservationCreated', handleNewRes);
+      socket.off('lowStockAutoRequest', handleLowStockAlert);
+    };
   }, [socket, bloodBank]);
 
   const handleRegisterBloodBank = async (e) => {
@@ -85,6 +113,7 @@ const BloodBankDashboard = () => {
       setBloodBank(res.data);
       setInventory(res.data.inventory);
       setStatusMsg({ text: 'Blood Bank created successfully!', type: 'success' });
+      fetchAutoRequests(res.data._id);
     } catch (err) {
       setStatusMsg({ text: err.response?.data?.message || 'Error registering blood bank', type: 'danger' });
     }
@@ -104,10 +133,32 @@ const BloodBankDashboard = () => {
       const res = await API.put(`/bloodbanks/${bloodBank._id}/inventory`, {
         inventory
       });
-      setBloodBank(res.data);
-      setStatusMsg({ text: 'Live blood stock updated and broadcasted!', type: 'success' });
+      setBloodBank(res.data.bloodBank || res.data);
+
+      if (res.data.autoRaisedCount > 0) {
+        setStatusMsg({
+          text: `Live stock updated! ⚡ System automatically raised ${res.data.autoRaisedCount} emergency donor request(s) for low-stock blood groups.`,
+          type: 'warning'
+        });
+        fetchAutoRequests(bloodBank._id);
+      } else {
+        setStatusMsg({ text: 'Live blood stock updated and broadcasted!', type: 'success' });
+      }
     } catch (err) {
       setStatusMsg({ text: err.response?.data?.message || 'Failed to update stock', type: 'danger' });
+    }
+  };
+
+  const handleTriggerAutoCheck = async () => {
+    try {
+      setScanning(true);
+      const res = await API.post(`/bloodbanks/${bloodBank._id}/auto-check`);
+      setStatusMsg({ text: res.data.message, type: 'info' });
+      fetchAutoRequests(bloodBank._id);
+    } catch (err) {
+      setStatusMsg({ text: 'Failed to run auto-replenishment scan', type: 'danger' });
+    } finally {
+      setScanning(false);
     }
   };
 
@@ -218,17 +269,26 @@ const BloodBankDashboard = () => {
 
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
           <h2 className="fw-bold text-danger mb-1">🩸 Blood Bank Dashboard</h2>
           <p className="text-muted mb-0">{bloodBank.name} – {bloodBank.address}</p>
         </div>
-        <div>
+        <div className="d-flex gap-2 align-items-center">
           {bloodBank.verified ? (
             <span className="badge bg-success px-3 py-2">✓ Verified Blood Bank</span>
           ) : (
             <span className="badge bg-warning text-dark px-3 py-2">Pending Admin Verification</span>
           )}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger fw-bold"
+            onClick={handleTriggerAutoCheck}
+            disabled={scanning}
+          >
+            {scanning ? 'Scanning...' : '⚡ Scan Stock & Auto-Replenish'}
+          </button>
         </div>
       </div>
 
@@ -239,10 +299,62 @@ const BloodBankDashboard = () => {
         </div>
       )}
 
-      {/* Inventory Management Table */}
+      {/* Automated Low-Stock Warning Banner */}
+      <div className="card shadow-sm border-0 mb-4 border-start border-4 border-warning bg-light">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <h5 className="fw-bold text-dark mb-0">⚡ Automated Low-Stock Replenishment System</h5>
+            <span className="badge bg-danger">SMART AUTO-DISPATCH ACTIVE</span>
+          </div>
+          <p className="small text-muted mb-3">
+            Whenever units for any blood group drop below the safety threshold ( $\le 4$ units for rare negative groups, $\le 5$ units for common groups), LifeLink automatically broadcasts emergency donor requests to nearby compatible registered donors within 15 km.
+          </p>
+
+          <div className="row g-2">
+            {bloodGroups.map((bg) => {
+              const currentItem = inventory.find((i) => i.bloodGroup === bg) || { unitsAvailable: 0 };
+              const units = currentItem.unitsAvailable;
+              const hasActiveAutoReq = autoRequests.some(
+                (r) => r.bloodGroup === bg && r.status === 'active'
+              );
+
+              let badgeColor = 'bg-success';
+              let statusLabel = 'Healthy Stock';
+
+              if (units <= 2) {
+                badgeColor = 'bg-danger';
+                statusLabel = 'Critical Deficit';
+              } else if (units <= 5) {
+                badgeColor = 'bg-warning text-dark';
+                statusLabel = 'Low Stock Buffer';
+              }
+
+              return (
+                <div key={bg} className="col-6 col-sm-3 col-md">
+                  <div className={`p-2 rounded border bg-white text-center ${units <= 4 ? 'border-danger' : ''}`}>
+                    <div className="fw-bold fs-6 text-danger">{bg}</div>
+                    <div className="fw-bold fs-5 text-dark">{units} units</div>
+                    <span className={`badge ${badgeColor} d-block mt-1`} style={{ fontSize: '10px' }}>
+                      {statusLabel}
+                    </span>
+                    {hasActiveAutoReq && (
+                      <span className="badge bg-danger-subtle text-danger border border-danger d-block mt-1" style={{ fontSize: '9px' }}>
+                        ⚡ Request Active
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Live Inventory Management Table */}
       <div className="card shadow-sm border-0 mb-4">
-        <div className="card-header bg-light py-3">
+        <div className="card-header bg-light py-3 d-flex justify-content-between align-items-center">
           <h5 className="fw-bold mb-0">Live Blood Inventory Management</h5>
+          <small className="text-muted">Updating stock will automatically trigger donor requests if units fall low.</small>
         </div>
         <div className="card-body p-4">
           <form onSubmit={handleUpdateInventory}>
@@ -261,18 +373,76 @@ const BloodBankDashboard = () => {
                         value={currentItem.unitsAvailable}
                         onChange={(e) => handleInventoryChange(bg, e.target.value)}
                       />
+                      {currentItem.unitsAvailable <= 4 && (
+                        <small className="text-danger fw-bold d-block mt-1">⚠️ Low Stock Trigger</small>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <button type="submit" className="btn btn-danger fw-bold">
-              Update Live Stock
-            </button>
+            <div className="d-flex justify-content-between align-items-center">
+              <button type="submit" className="btn btn-danger fw-bold">
+                Update Live Stock & Scan Thresholds
+              </button>
+              <small className="text-muted">Thresholds: $\le 4$ units for rare groups, $\le 5$ for others</small>
+            </div>
           </form>
         </div>
       </div>
+
+      {/* Active Automated Replenishment Requests */}
+      {autoRequests.length > 0 && (
+        <div className="card shadow-sm border-0 mb-4 border-top border-4 border-danger">
+          <div className="card-header bg-danger text-white py-2 d-flex justify-content-between align-items-center">
+            <h5 className="fw-bold mb-0 fs-6">📢 Active Automated Donor Replenishment Broadcasts ({autoRequests.length})</h5>
+            <span className="badge bg-white text-danger fw-bold">Auto-Raised</span>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>Blood Group</th>
+                    <th>Deficit / Needed</th>
+                    <th>Urgency</th>
+                    <th>Stock When Raised</th>
+                    <th>Donors Dispatched</th>
+                    <th>Broadcast Status</th>
+                    <th>Triggered At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {autoRequests.map((req) => (
+                    <tr key={req._id}>
+                      <td>
+                        <span className="badge bg-danger fs-6">{req.bloodGroup}</span>
+                      </td>
+                      <td className="fw-bold text-danger">{req.unitsNeeded} units</td>
+                      <td>
+                        <span className={`badge ${req.urgency === 'critical' ? 'bg-danger' : 'bg-warning text-dark'} text-uppercase`}>
+                          {req.urgency}
+                        </span>
+                      </td>
+                      <td>{req.currentStockWhenRaised ?? 'Low'} units</td>
+                      <td>
+                        <span className="badge bg-info text-dark">
+                          {req.matchedDonors?.length || 0} donors notified
+                        </span>
+                      </td>
+                      <td>
+                        <span className="badge bg-success text-uppercase">{req.status}</span>
+                      </td>
+                      <td className="small text-muted">{new Date(req.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Blood Reservations Table */}
       <div className="card shadow-sm border-0">
