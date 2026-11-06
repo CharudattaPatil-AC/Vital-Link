@@ -1,0 +1,285 @@
+const BloodBank = require('../models/BloodBank');
+
+// GET /api/bloodbanks - Search nearby blood banks
+exports.getBloodBanks = async (req, res) => {
+  try {
+    const { lat, lng, radius, bloodGroup, search, limit } = req.query;
+
+    let query = {};
+
+    if (lat && lng) {
+      const maxDistance = parseInt(radius, 10) || 25000;
+      query.location = {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+          },
+          $maxDistance: maxDistance
+        }
+      };
+    }
+
+    if (bloodGroup) {
+      query['inventory'] = {
+        $elemMatch: {
+          bloodGroup: bloodGroup,
+          unitsAvailable: { $gt: 0 }
+        }
+      };
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { address: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const maxResults = parseInt(limit, 10) || 60;
+    const bloodBanks = await BloodBank.find(query)
+      .populate('managedBy', 'name email')
+      .limit(maxResults);
+
+    res.json(bloodBanks);
+  } catch (error) {
+    console.error('Get blood banks error:', error);
+    res.status(500).json({ message: 'Server error fetching blood banks' });
+  }
+};
+
+// GET /api/bloodbanks/:id
+exports.getBloodBankById = async (req, res) => {
+  try {
+    const bloodBank = await BloodBank.findById(req.params.id).populate('managedBy', 'name email phone');
+    if (!bloodBank) {
+      return res.status(404).json({ message: 'Blood bank not found' });
+    }
+    res.json(bloodBank);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/bloodbanks - Create blood bank
+exports.createBloodBank = async (req, res) => {
+  try {
+    const { name, email, phone, address, location } = req.body;
+
+    const existing = await BloodBank.findOne({ managedBy: req.user._id });
+    if (existing) {
+      return res.status(400).json({ message: 'You already manage a blood bank' });
+    }
+
+    const defaultInventory = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({
+      bloodGroup: bg,
+      unitsAvailable: 0
+    }));
+
+    const bloodBank = await BloodBank.create({
+      name,
+      email,
+      phone,
+      address,
+      location: {
+        type: 'Point',
+        coordinates: location.coordinates
+      },
+      managedBy: req.user._id,
+      inventory: defaultInventory
+    });
+
+    res.status(201).json(bloodBank);
+  } catch (error) {
+    console.error('Create blood bank error:', error);
+    res.status(500).json({ message: 'Server error creating blood bank' });
+  }
+};
+
+// PUT /api/bloodbanks/:id/inventory - Update blood inventory
+exports.updateInventory = async (req, res) => {
+  try {
+    const bloodBank = await BloodBank.findById(req.params.id);
+    if (!bloodBank) {
+      return res.status(404).json({ message: 'Blood bank not found' });
+    }
+
+    if (bloodBank.managedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update this blood bank' });
+    }
+
+    const { inventory } = req.body;
+    if (inventory) {
+      bloodBank.inventory = inventory;
+    }
+
+    await bloodBank.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('inventoryUpdate', {
+        type: 'bloodbank',
+        facilityId: bloodBank._id,
+        inventory: bloodBank.inventory
+      });
+    }
+
+    res.json(bloodBank);
+  } catch (error) {
+    console.error('Update blood bank inventory error:', error);
+    res.status(500).json({ message: 'Server error updating inventory' });
+  }
+};
+
+// GET /api/bloodbanks/my - Get blood bank managed by current user
+exports.getMyBloodBank = async (req, res) => {
+  try {
+    const bloodBank = await BloodBank.findOne({ managedBy: req.user._id });
+    if (!bloodBank) {
+      return res.status(404).json({ message: 'No blood bank found for this user' });
+    }
+    res.json(bloodBank);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/bloodbanks/:id/verify - Toggle verification (admin only)
+exports.toggleVerifyBloodBank = async (req, res) => {
+  try {
+    const bloodBank = await BloodBank.findById(req.params.id);
+    if (!bloodBank) {
+      return res.status(404).json({ message: 'Blood bank not found' });
+    }
+    bloodBank.verified = !bloodBank.verified;
+    await bloodBank.save();
+    res.json(bloodBank);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/bloodbanks/analytics/scarcity - India Blood Scarcity & Deficit Analytics
+exports.getScarcityAnalytics = async (req, res) => {
+  try {
+    const bloodBanks = await BloodBank.find({}, 'name address location inventory verified');
+
+    const INDIAN_STATES = [
+      'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+      'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+      'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+      'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+      'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+      'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Andaman and Nicobar',
+      'Chandigarh', 'Dadra and Nagar Haveli', 'Delhi', 'Jammu and Kashmir',
+      'Ladakh', 'Lakshadweep', 'Puducherry'
+    ];
+
+    const stateStats = {};
+    INDIAN_STATES.forEach(state => {
+      stateStats[state] = {
+        state,
+        totalBanks: 0,
+        totalUnits: 0,
+        bloodGroups: {
+          'A+': 0, 'A-': 0, 'B+': 0, 'B-': 0,
+          'AB+': 0, 'AB-': 0, 'O+': 0, 'O-': 0
+        },
+        scarcityStatus: 'Adequate',
+        criticalGroups: []
+      };
+    });
+
+    const otherStats = {
+      state: 'Other / Regional',
+      totalBanks: 0,
+      totalUnits: 0,
+      bloodGroups: {
+        'A+': 0, 'A-': 0, 'B+': 0, 'B-': 0,
+        'AB+': 0, 'AB-': 0, 'O+': 0, 'O-': 0
+      },
+      scarcityStatus: 'Adequate',
+      criticalGroups: []
+    };
+
+    let nationalTotalUnits = 0;
+    const nationalGroups = {
+      'A+': 0, 'A-': 0, 'B+': 0, 'B-': 0,
+      'AB+': 0, 'AB-': 0, 'O+': 0, 'O-': 0
+    };
+
+    bloodBanks.forEach(bb => {
+      const addr = (bb.address || '').toLowerCase();
+      let matchedState = INDIAN_STATES.find(s => addr.includes(s.toLowerCase()));
+
+      // Fallback matching common aliases
+      if (!matchedState) {
+        if (addr.includes('delhi') || addr.includes('new delhi')) matchedState = 'Delhi';
+        else if (addr.includes('orissa')) matchedState = 'Odisha';
+        else if (addr.includes('pondicherry')) matchedState = 'Puducherry';
+        else if (addr.includes('uttaranchal')) matchedState = 'Uttarakhand';
+      }
+
+      const target = matchedState ? stateStats[matchedState] : otherStats;
+      target.totalBanks += 1;
+
+      (bb.inventory || []).forEach(item => {
+        const bg = item.bloodGroup;
+        const count = item.unitsAvailable || 0;
+        if (target.bloodGroups[bg] !== undefined) {
+          target.bloodGroups[bg] += count;
+          target.totalUnits += count;
+        }
+        if (nationalGroups[bg] !== undefined) {
+          nationalGroups[bg] += count;
+          nationalTotalUnits += count;
+        }
+      });
+    });
+
+    // Compute scarcity metrics per state
+    const statesArray = Object.values(stateStats).filter(s => s.totalBanks > 0);
+    if (otherStats.totalBanks > 0) statesArray.push(otherStats);
+
+    let statesInCriticalDeficit = 0;
+
+    statesArray.forEach(st => {
+      const rareGroups = ['O-', 'AB-', 'B-', 'A-'];
+      const crit = [];
+      rareGroups.forEach(bg => {
+        // If average units per bank is under 4 units, flag as critical
+        const avg = st.totalBanks > 0 ? st.bloodGroups[bg] / st.totalBanks : 0;
+        if (avg < 4 || st.bloodGroups[bg] < 15) {
+          crit.push(bg);
+        }
+      });
+
+      st.criticalGroups = crit;
+      if (crit.length >= 3 || st.bloodGroups['O-'] < 20) {
+        st.scarcityStatus = 'Critical Deficit';
+        statesInCriticalDeficit += 1;
+      } else if (crit.length > 0) {
+        st.scarcityStatus = 'Moderate Shortage';
+      } else {
+        st.scarcityStatus = 'Adequate';
+      }
+    });
+
+    // Sort by total blood banks descending
+    statesArray.sort((a, b) => b.totalBanks - a.totalBanks);
+
+    res.json({
+      summary: {
+        totalBloodBanks: bloodBanks.length,
+        totalUnitsInReserve: nationalTotalUnits,
+        statesCovered: statesArray.length,
+        statesInCriticalDeficit,
+        nationalGroups
+      },
+      states: statesArray
+    });
+  } catch (error) {
+    console.error('Error fetching scarcity analytics:', error);
+    res.status(500).json({ message: 'Server error retrieving blood scarcity data' });
+  }
+};

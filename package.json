@@ -1,0 +1,16 @@
+{
+  "name": "lifelink-root",
+  "version": "1.0.0",
+  "description": "LifeLink – Emergency Healthcare Resource & Rare Blood Matching Network",
+  "scripts": {
+    "seed": "npm run seed --prefix backend",
+    "server": "npm run dev --prefix backend",
+    "client": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "doc:sync": "npm run doc:sync --prefix backend"
+  },
+  "keywords": ["emergency", "healthcare", "blood-donation", "hospital-beds", "mern"],
+  "author": "",
+  "license": "ISC"
+}
+
