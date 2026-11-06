@@ -158,3 +158,4 @@ module.exports = {
   LOW_STOCK_THRESHOLDS,
   checkAndTriggerLowStockRequests
 };
+
