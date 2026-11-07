@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import BloodBankCard from '../components/BloodBankCard';
 import InteractiveMap from '../components/InteractiveMap';
-import GoogleMapView from '../components/GoogleMapView';
 import { useSocket } from '../context/SocketContext';
 
 const INDIAN_CITIES = [
@@ -150,14 +149,7 @@ const SearchBloodBanks = () => {
               className={`btn btn-sm ${viewMode === 'map' ? 'btn-danger' : 'btn-outline-danger'}`}
               onClick={() => setViewMode('map')}
             >
-              🗺️ Leaflet
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'google' ? 'btn-danger' : 'btn-outline-danger'}`}
-              onClick={() => setViewMode('google')}
-            >
-              📍 Google Maps
+              🗺️ Map View
             </button>
           </div>
 
@@ -267,15 +259,6 @@ const SearchBloodBanks = () => {
       {/* Map Views */}
       {viewMode === 'map' && (
         <InteractiveMap
-          center={[parseFloat(lat) || 28.6139, parseFloat(lng) || 77.2090]}
-          radius={parseInt(radius, 10)}
-          items={bloodBanks}
-          type="bloodbank"
-        />
-      )}
-
-      {viewMode === 'google' && (
-        <GoogleMapView
           center={[parseFloat(lat) || 28.6139, parseFloat(lng) || 77.2090]}
           radius={parseInt(radius, 10)}
           items={bloodBanks}

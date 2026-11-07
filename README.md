@@ -35,7 +35,7 @@ flowchart TD
     subgraph ClientLayer["🖥️ Frontend Client (React 18 + Vite + Bootstrap 5)"]
         UI_Home["Landing & Alert Portal"]
         UI_Search["Geospatial Discovery (Hospitals & Blood Banks)"]
-        UI_DualMap["Dual Map Switcher (Leaflet OSM & Google Maps)"]
+        UI_Map["Interactive OpenStreetMap & Leaflet View"]
         UI_Dashboards["Role Dashboards (Patient / Hospital / BloodBank / Donor / Admin)"]
     end
 
@@ -171,11 +171,11 @@ flowchart TD
 - **Medical Safety Guards:** Enforces the mandatory **90-day cooldown interval** between whole blood donations and verifies donor age (18–65).
 - **Cross-Inventory Hybrid Checking:** Simultaneously queries certified blood banks for existing compatible cold storage units and pre-alerts nearby voluntary donors.
 
-### 3. 🗺️ Dual Map Engine (Google Maps & OpenStreetMap / Leaflet)
-- **Multi-Provider View Switcher:** Toggle freely between:
+### 3. 🗺️ Interactive OpenStreetMap & Leaflet Engine
+- **Free & Open-Source Geospatial Visualization:** Powered by Leaflet and OpenStreetMap tiles without requiring third-party API keys or incurring billing quota limits.
+- **Toggle View Switcher:** Seamlessly toggle between:
   - **`📋 Grid Cards`**
-  - **`🗺️ Leaflet / OpenStreetMap`** (100% free, no API keys needed)
-  - **`📍 Google Maps`** (interactive live view + directions)
+  - **`🗺️ Interactive Map View`**
 - **Turn-by-Turn Driving Navigation:** Every hospital and blood bank card includes a direct **`🧭 Directions`** button that opens real-time Google Maps GPS navigation to the facility gate.
 - **Custom Facility Pins:** Interactive markers displaying available ICU beds, oxygen, and blood stock in clickable popups.
 
@@ -246,7 +246,6 @@ VitalLink/
 │   │   ├── components/
 │   │   │   ├── BloodBankCard.jsx       # Blood bank card with stock badges & navigation
 │   │   │   ├── BloodRequestCard.jsx    # Alert card for emergency blood requests
-│   │   │   ├── GoogleMapView.jsx       # Interactive Google Maps view with directions
 │   │   │   ├── HospitalCard.jsx        # Hospital card with resource gauges & directions
 │   │   │   ├── InteractiveMap.jsx      # Leaflet OpenStreetMap view with custom pins
 │   │   │   ├── Navbar.jsx              # Responsive navigation header with role badge

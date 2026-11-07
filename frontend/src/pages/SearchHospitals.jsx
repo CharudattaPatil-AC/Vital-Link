@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import HospitalCard from '../components/HospitalCard';
 import InteractiveMap from '../components/InteractiveMap';
-import GoogleMapView from '../components/GoogleMapView';
 import { useSocket } from '../context/SocketContext';
 
 const SearchHospitals = () => {
@@ -136,14 +135,7 @@ const SearchHospitals = () => {
               className={`btn btn-sm ${viewMode === 'map' ? 'btn-danger' : 'btn-outline-danger'}`}
               onClick={() => setViewMode('map')}
             >
-              🗺️ Leaflet Map
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'google' ? 'btn-danger' : 'btn-outline-danger'}`}
-              onClick={() => setViewMode('google')}
-            >
-              📍 Google Maps
+              🗺️ Map View
             </button>
           </div>
         </div>
@@ -242,17 +234,6 @@ const SearchHospitals = () => {
       {viewMode === 'map' && (
         <div className="mb-4">
           <InteractiveMap
-            center={mapCenter}
-            radius={isGpsActive ? parseInt(radius, 10) : 500000}
-            items={hospitals}
-            type="hospital"
-          />
-        </div>
-      )}
-
-      {viewMode === 'google' && (
-        <div className="mb-4">
-          <GoogleMapView
             center={mapCenter}
             radius={isGpsActive ? parseInt(radius, 10) : 500000}
             items={hospitals}
