@@ -143,7 +143,7 @@ flowchart TD
 ### 1. 🇮🇳 All-India Official Blood Bank Directory (2,439+ Verified Centers)
 - **Kaggle National Registry:** Ingested verified records for **2,439 official blood banks** across India with exact GPS coordinates.
 - **Pan-India Coverage:** Spans all **36 States and Union Territories** (Delhi, Maharashtra, Karnataka, Tamil Nadu, West Bengal, Telangana, Gujarat, Rajasthan, Uttar Pradesh, Punjab, Kerala, Bihar, Assam, Odisha, and more).
-- **Interactive City Jump Selector:** Jump instantly to any major Indian city/state or use live GPS to find certified blood banks closest to your coordinates.
+- **Instant Search by Keyword / City:** Search blood banks across India by city, state, or facility name with live distance calculations.
 - **Search by Name/Facility:** Filter by keyword (e.g., *AIIMS*, *Red Cross*, *Rotary*, *Civil Hospital*, *Tata Memorial*) with live distance calculations.
 - **Live Inventory by Blood Group:** Real-time unit counts across all 8 blood groups (`A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-`).
 
@@ -244,7 +244,7 @@ VitalLink/
 │   │   │   ├── Login.jsx               # One-click demo credentials login page
 │   │   │   ├── PatientDashboard.jsx    # Patient holds & active blood request viewer
 │   │   │   ├── Register.jsx            # Multi-role registration with GPS detection
-│   │   │   ├── SearchBloodBanks.jsx    # All-India blood bank search with city jump & live stock
+│   │   │   ├── SearchBloodBanks.jsx    # All-India blood bank search with live stock & filters
 │   │   │   └── SearchHospitals.jsx     # Hospital discovery with responsive cards & directions
 │   │   ├── services/
 │   │   │   └── api.js                  # Axios instance with auth token interceptor
