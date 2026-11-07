@@ -33,13 +33,12 @@ const DonorDashboard = () => {
     fetchDonorData();
   }, []);
 
-  // Real-time listener for incoming matching blood requests & agent escalation
+  // Real-time listener for incoming matching blood requests
   useEffect(() => {
     if (!socket) return;
     const handleIncomingRequest = (data) => {
-      const isIVR = data.ivrScript ? ' • 📞 Automated IVR Call Triggered' : '';
       setStatusMsg({
-        text: `🚨 URGENT BLOOD ALERT: ${data.requestedBloodGroup || data.bloodGroup} needed at ${data.hospitalName || 'Emergency Hospital'}${isIVR}!`,
+        text: `🚨 URGENT: Blood needed for ${data.bloodGroup}! Hospital: ${data.hospitalName}`,
         type: 'danger'
       });
       fetchDonorData();
@@ -197,7 +196,6 @@ const DonorDashboard = () => {
               request={req}
               isDonorView={true}
               onRespond={handleRespondToRequest}
-              onRefresh={fetchDonorData}
             />
           ))}
         </div>

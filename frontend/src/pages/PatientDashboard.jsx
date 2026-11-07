@@ -33,42 +33,19 @@ const PatientDashboard = () => {
     fetchData();
   }, []);
 
-  // Socket for donor response alerts and agent escalation
+  // Socket for donor response alerts
   useEffect(() => {
     if (!socket) return;
     const handleDonorRes = (data) => {
       setStatusMsg({
-        text: `A voluntary donor (${data.donorName || 'Donor'}) has responded '${data.status}' to your blood request!`,
+        text: `A voluntary donor has responded '${data.status}' to your blood request!`,
         type: data.status === 'accepted' ? 'success' : 'info'
       });
       fetchData();
     };
 
-    const handleAgentEscalation = (data) => {
-      setStatusMsg({
-        text: `🤖 Autonomous Dispatch Agent escalated your broadcast to Tier ${data.escalationTier} (${data.radius / 1000} km radius)!`,
-        type: 'warning'
-      });
-      fetchData();
-    };
-
-    const handleHoldSecured = (data) => {
-      setStatusMsg({
-        text: `🚨 ${data.message}`,
-        type: 'success'
-      });
-      fetchData();
-    };
-
     socket.on('donorResponse', handleDonorRes);
-    socket.on('agentEscalationUpdate', handleAgentEscalation);
-    socket.on('autonomousHoldSecured', handleHoldSecured);
-
-    return () => {
-      socket.off('donorResponse', handleDonorRes);
-      socket.off('agentEscalationUpdate', handleAgentEscalation);
-      socket.off('autonomousHoldSecured', handleHoldSecured);
-    };
+    return () => socket.off('donorResponse', handleDonorRes);
   }, [socket]);
 
   const handleCancelReservation = async (id) => {
@@ -216,17 +193,11 @@ const PatientDashboard = () => {
       </div>
 
       {/* My Emergency Blood Requests */}
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h5 className="fw-bold mb-0">My Emergency Blood Broadcasts</h5>
-        <span className="badge bg-danger-subtle text-danger border border-danger px-3 py-2">
-          🤖 Autonomous Blood Dispatch & Escalation Agent: Active (5km ➔ 15km ➔ 30km)
-        </span>
-      </div>
-
+      <h5 className="fw-bold mb-3">My Emergency Blood Requests</h5>
       {bloodRequests.length > 0 ? (
         <div>
           {bloodRequests.map((req) => (
-            <BloodRequestCard key={req._id} request={req} isDonorView={false} onRefresh={fetchData} />
+            <BloodRequestCard key={req._id} request={req} isDonorView={false} />
           ))}
         </div>
       ) : (

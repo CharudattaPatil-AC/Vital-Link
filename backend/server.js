@@ -60,12 +60,6 @@ setInterval(() => {
   checkExpiredReservations(io);
 }, 60000);
 
-// Autonomous Blood Dispatch & Escalation Agent (monitors active broadcasts every 60s)
-const { runAutonomousMonitoringLoop } = require('./utils/autonomousDispatchAgent');
-setInterval(() => {
-  runAutonomousMonitoringLoop(io);
-}, 60000);
-
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
