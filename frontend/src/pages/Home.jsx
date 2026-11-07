@@ -124,36 +124,7 @@ const Home = () => {
         </section>
       )}
 
-      {/* Informational Section */}
-      <section className="container py-5 text-center">
-        <h3 className="fw-bold mb-3">How LifeLink Saves Critical Golden Hours</h3>
-        <div className="row g-4 mt-2 text-start">
-          <div className="col-md-4">
-            <div className="p-3 border rounded bg-white">
-              <h6 className="fw-bold text-danger">1. Instant Geo-Discovery</h6>
-              <p className="text-muted small mb-0">
-                Uses MongoDB 2dsphere indexing to pinpoint facilities nearest to your current GPS coordinates.
-              </p>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="p-3 border rounded bg-white">
-              <h6 className="fw-bold text-danger">2. Atomic Reservations</h6>
-              <p className="text-muted small mb-0">
-                Prevents double booking of hospital beds or rare blood units with atomic conditional checks.
-              </p>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="p-3 border rounded bg-white">
-              <h6 className="fw-bold text-danger">3. Real-Time Socket Updates</h6>
-              <p className="text-muted small mb-0">
-                Live inventory synchronisation via WebSockets keeps ambulances and families informed without manual calls.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 };

@@ -336,7 +336,7 @@ LifeLink uses Socket.IO to provide instant peer-to-peer and broadcast emergency 
 |---|---|---|
 | **Frontend Framework** | React 18, Vite | High-performance SPA with fast HMR |
 | **Routing & Navigation** | React Router v7 | Nested, role-guarded client routing |
-| **UI Components** | Bootstrap 5, React-Bootstrap | Clean, accessible, standardized design |
+| **UI Components** | Bootstrap 5 | Clean, responsive, standardized emergency healthcare UI |
 | **Mapping & Directions** | Google Maps Driving Navigation | Direct GPS turn-by-turn driving directions to facility gate |
 | **Backend Runtime** | Node.js, Express.js | Asynchronous RESTful service tier |
 | **Real-Time Layer** | Socket.IO Client & Server | Sub-second emergency broadcasts & inventory synchronization |
