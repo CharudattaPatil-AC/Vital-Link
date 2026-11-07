@@ -52,7 +52,7 @@ const Home = () => {
                 <div className="fs-1 mb-2">🏥</div>
                 <h5 className="card-title fw-bold">Hospital Resource Finder</h5>
                 <p className="card-text text-muted">
-                  Locate verified hospitals with real-time available ICU beds, general beds, oxygen support, and emergency medicines.
+                  Locate verified hospitals with real-time available ICU beds, general beds, oxygen support, and ventilators.
                 </p>
                 <Link to="/search/hospitals" className="btn btn-sm btn-outline-danger">
                   Search Hospitals &rarr;

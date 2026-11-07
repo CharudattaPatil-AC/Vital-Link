@@ -72,7 +72,7 @@ exports.getHospitalById = async (req, res) => {
 // POST /api/hospitals - Create hospital
 exports.createHospital = async (req, res) => {
   try {
-    const { name, email, phone, address, location, resources, emergencyMedicines, operatingHours } = req.body;
+    const { name, email, phone, address, location, resources, operatingHours } = req.body;
 
     const existing = await Hospital.findOne({ managedBy: req.user._id });
     if (existing) {
@@ -90,7 +90,6 @@ exports.createHospital = async (req, res) => {
       },
       managedBy: req.user._id,
       resources: resources || {},
-      emergencyMedicines: emergencyMedicines || [],
       operatingHours: operatingHours || '24/7'
     });
 
@@ -113,10 +112,9 @@ exports.updateInventory = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this hospital' });
     }
 
-    const { resources, emergencyMedicines } = req.body;
+    const { resources } = req.body;
 
     if (resources) hospital.resources = resources;
-    if (emergencyMedicines) hospital.emergencyMedicines = emergencyMedicines;
 
     await hospital.save();
 
@@ -126,8 +124,7 @@ exports.updateInventory = async (req, res) => {
       io.emit('inventoryUpdate', {
         type: 'hospital',
         facilityId: hospital._id,
-        resources: hospital.resources,
-        emergencyMedicines: hospital.emergencyMedicines
+        resources: hospital.resources
       });
     }
 

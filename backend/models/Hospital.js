@@ -17,11 +17,6 @@ const hospitalSchema = new mongoose.Schema({
     oxygenCylinders: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } },
     ventilators: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } }
   },
-  emergencyMedicines: [{
-    name: String,
-    available: Boolean,
-    quantity: Number
-  }],
   operatingHours: { type: String, default: '24/7' }
 }, { timestamps: true });
 

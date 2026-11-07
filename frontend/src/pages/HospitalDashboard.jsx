@@ -28,17 +28,11 @@ const HospitalDashboard = () => {
     ventilators: { total: 0, available: 0 }
   });
 
-  // Emergency medicine input
-  const [medicines, setMedicines] = useState([]);
-  const [newMedName, setNewMedName] = useState('');
-  const [newMedQty, setNewMedQty] = useState('');
-
   const fetchMyHospital = async () => {
     try {
       const res = await API.get('/hospitals/my');
       setHospital(res.data);
       if (res.data.resources) setResources(res.data.resources);
-      if (res.data.emergencyMedicines) setMedicines(res.data.emergencyMedicines);
     } catch (err) {
       if (err.response?.status !== 404) {
         console.error('Error fetching hospital:', err);
@@ -100,30 +94,13 @@ const HospitalDashboard = () => {
     e.preventDefault();
     try {
       const res = await API.put(`/hospitals/${hospital._id}/inventory`, {
-        resources,
-        emergencyMedicines: medicines
+        resources
       });
       setHospital(res.data);
       setStatusMsg({ text: 'Inventory updated and broadcasted in real time!', type: 'success' });
     } catch (err) {
       setStatusMsg({ text: err.response?.data?.message || 'Failed to update inventory', type: 'danger' });
     }
-  };
-
-  const handleAddMedicine = () => {
-    if (!newMedName.trim()) return;
-    const item = {
-      name: newMedName.trim(),
-      available: true,
-      quantity: parseInt(newMedQty, 10) || 1
-    };
-    setMedicines([...medicines, item]);
-    setNewMedName('');
-    setNewMedQty('');
-  };
-
-  const handleRemoveMedicine = (index) => {
-    setMedicines(medicines.filter((_, i) => i !== index));
   };
 
   const handleReservationStatus = async (resId, newStatus) => {
@@ -400,54 +377,6 @@ const HospitalDashboard = () => {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Emergency Medicines Section */}
-            <div className="mb-4">
-              <h6 className="fw-bold">Emergency Medicines on Standby</h6>
-              <div className="row g-2 mb-3">
-                <div className="col-md-6">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Medicine Name (e.g. Epinephrine)"
-                    value={newMedName}
-                    onChange={(e) => setNewMedName(e.target.value)}
-                  />
-                </div>
-                <div className="col-md-4">
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    placeholder="Stock Quantity"
-                    value={newMedQty}
-                    onChange={(e) => setNewMedQty(e.target.value)}
-                  />
-                </div>
-                <div className="col-md-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger btn-sm w-100"
-                    onClick={handleAddMedicine}
-                  >
-                    + Add Medicine
-                  </button>
-                </div>
-              </div>
-
-              <div className="d-flex flex-wrap gap-2">
-                {medicines.map((m, idx) => (
-                  <span key={idx} className="badge bg-light text-dark border p-2 d-flex align-items-center gap-2">
-                    <span>{m.name} ({m.quantity} in stock)</span>
-                    <button
-                      type="button"
-                      className="btn-close btn-close-sm"
-                      style={{ fontSize: '0.6rem' }}
-                      onClick={() => handleRemoveMedicine(idx)}
-                    ></button>
-                  </span>
-                ))}
               </div>
             </div>
 

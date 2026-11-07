@@ -146,12 +146,6 @@ const seedData = async () => {
           oxygenCylinders: { total: 80, available: 25 },
           ventilators: { total: 20, available: 6 }
         },
-        emergencyMedicines: [
-          { name: 'Adrenaline / Epinephrine', available: true, quantity: 45 },
-          { name: 'Atropine', available: true, quantity: 30 },
-          { name: 'Amiodarone', available: true, quantity: 20 },
-          { name: 'Norepinephrine', available: true, quantity: 15 }
-        ],
         operatingHours: '24/7'
       },
       {
@@ -168,11 +162,6 @@ const seedData = async () => {
           oxygenCylinders: { total: 50, available: 18 },
           ventilators: { total: 15, available: 4 }
         },
-        emergencyMedicines: [
-          { name: 'Nitroglycerin IV', available: true, quantity: 25 },
-          { name: 'Heparin Injection', available: true, quantity: 40 },
-          { name: 'Furosemide', available: true, quantity: 60 }
-        ],
         operatingHours: '24/7'
       }
     ];
@@ -201,7 +190,6 @@ const seedData = async () => {
           address: h.address,
           location: h.location,
           resources: h.resources,
-          emergencyMedicines: h.emergencyMedicines,
           operatingHours: '24/7',
           verified: true,
           managedBy: adminUser._id

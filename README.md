@@ -6,7 +6,7 @@
 [![Geospatial](https://img.shields.io/badge/Spatial-MongoDB%202dsphere-blue.svg)](https://www.mongodb.com/docs/manual/core/indexes/index-types/index-geospatial/)
 [![Documentation Sync](https://img.shields.io/badge/Docs-Automated%20Sync%20Verified-success.svg)](#-documentation-synchronization)
 
-LifeLink is a centralized, real-time emergency healthcare resource coordination and rare blood matching platform designed to solve the critical "Golden Hour" bottleneck during medical emergencies. It provides instant visibility into life-saving resources (ICU beds, oxygen cylinders, ventilators, emergency medicines, and blood units) across India, connecting patients, hospitals, certified blood banks, and voluntary donors in real time.
+LifeLink is a centralized, real-time emergency healthcare resource coordination and rare blood matching platform designed to solve the critical "Golden Hour" bottleneck during medical emergencies. It provides instant visibility into life-saving resources (ICU beds, oxygen cylinders, ventilators, and blood units) across India, connecting patients, hospitals, certified blood banks, and voluntary donors in real time.
 
 ---
 
@@ -181,9 +181,9 @@ flowchart TD
 
 ### 4. 🏥 Pan-India Official Hospital Directory (10,672+ Verified Centers)
 - **National Registry Ingestion:** Ingested the official National Hospital Directory containing **10,672 verified geocoded hospitals** across all 36 States and Union Territories.
-- **Direct All-India Directory Access:** Directly browse and search verified hospitals nationwide with live bed counters, oxygen status, and emergency medicines without radius locks.
+- **Direct All-India Directory Access:** Directly browse and search verified hospitals nationwide with live bed counters and oxygen status without radius locks.
 - **Pan-India Multi-Filter:** Filter across all 36 States & UTs, search by keyword/city/hospital name, or filter by critical resource need (ICU beds, general emergency beds, oxygen cylinders, ventilators).
-- **Critical Resource & Medicine Standby:** Live tracking of hospital capacity alongside standby life-saving medicines (Epinephrine, Atropine, Amiodarone, Norepinephrine).
+- **Critical Resource Standby:** Live tracking of hospital capacity across ICU Beds, Ventilators, General Beds, and Oxygen Cylinders.
 - **Dedicated Hospital Portal:** Facility admins update stock in real-time, confirm incoming reservations, and restock beds upon discharge.
 
 ### 5. 🔒 Atomic Concurrency & Auto-Restock Mechanism
@@ -218,7 +218,7 @@ VitalLink/
 │   ├── models/
 │   │   ├── BloodBank.js                # Blood bank model with 2dsphere index
 │   │   ├── BloodRequest.js             # Blood broadcast model with matched tiers
-│   │   ├── Hospital.js                 # Hospital resources (ICU, O2, beds, medicines)
+│   │   ├── Hospital.js                 # Hospital resources (ICU, O2, beds, ventilators)
 │   │   ├── Reservation.js              # Atomic reservation holds with expiration
 │   │   └── User.js                     # Multi-role user accounts & donor data
 │   ├── routes/
@@ -262,7 +262,7 @@ VitalLink/
 │   │   │   ├── DonorDashboard.jsx      # Donor portal with availability & cooldown guards
 │   │   │   ├── Home.jsx                # Landing page with active emergencies & quick links
 │   │   │   ├── HospitalDashboard.jsx   # Resource manager for hospital administrators
-│   │   │   ├── HospitalDetail.jsx      # Hospital resources, emergency medicines & holds
+│   │   │   ├── HospitalDetail.jsx      # Hospital resources (ICU, Beds, O2, Ventilator) & holds
 │   │   │   ├── Login.jsx               # One-click demo credentials login page
 │   │   │   ├── PatientDashboard.jsx    # Patient holds, active requests & QR pass viewer
 │   │   │   ├── Register.jsx            # Multi-role registration with GPS detection
@@ -286,7 +286,7 @@ VitalLink/
 | Model | Collection | Primary Attributes | Key Indexes |
 |---|---|---|---|
 | **User** | `users` | `name`, `email`, `password`, `phone`, `role` (`patient`, `donor`, `hospital`, `bloodbank`, `admin`), `bloodGroup`, `isAvailable`, `lastDonationDate`, `location` | `email: 1`, `location: '2dsphere'` |
-| **Hospital** | `hospitals` | `name`, `email`, `phone`, `address`, `location`, `resources` (`icuBeds`, `generalBeds`, `oxygenCylinders`, `ventilators`), `emergencyMedicines`, `verified`, `managedBy` | `location: '2dsphere'`, `verified: 1` |
+| **Hospital** | `hospitals` | `name`, `email`, `phone`, `address`, `location`, `resources` (`icuBeds`, `generalBeds`, `oxygenCylinders`, `ventilators`), `verified`, `managedBy` | `location: '2dsphere'`, `verified: 1` |
 | **BloodBank** | `bloodbanks` | `name`, `email`, `phone`, `address`, `location`, `inventory` (`bloodGroup`, `unitsAvailable`), `verified`, `managedBy` | `location: '2dsphere'`, `inventory.bloodGroup: 1` |
 | **Reservation** | `reservations` | `patient`, `facilityId`, `facilityModel` (`Hospital`/`BloodBank`), `facilityName`, `resourceType`, `bloodGroup`, `quantity`, `status` (`active`, `confirmed`, `cancelled`, `expired`), `expiresAt` (60 min) | `patient: 1`, `facilityId: 1`, `status: 1`, `expiresAt: 1` |
 | **BloodRequest** | `bloodrequests` | `patient`, `hospitalName`, `bloodGroup`, `urgency` (`normal`, `critical`), `unitsRequired`, `status` (`pending`, `fulfilled`, `cancelled`), `matchedDonors` (`donor`, `tier`, `status`), `location` | `location: '2dsphere'`, `status: 1` |
@@ -305,7 +305,7 @@ VitalLink/
 - `GET /api/hospitals/:id` — Retrieve comprehensive hospital resource details.
 - `GET /api/hospitals/my` — Get hospital facility managed by logged-in hospital admin (`Hospital/Admin`).
 - `POST /api/hospitals` — Create a new hospital facility (`Hospital/Admin`).
-- `PUT /api/hospitals/:id/resources` — Update live bed, oxygen, and medicine stock (`Hospital/Admin`).
+- `PUT /api/hospitals/:id/resources` — Update live bed, oxygen, and ventilator stock (`Hospital/Admin`).
 - `PUT /api/hospitals/:id/verify` — Toggle verified hospital status (`Admin Only`).
 
 ### Blood Banks (`/api/bloodbanks`)
@@ -439,8 +439,7 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 3. In the sidebar, select the **`lifelink`** database.
 4. Explore the collections:
    - `bloodbanks`: 2,439 verified centers with live stock and GPS coordinates.
-   - `hospitals`: Emergency facilities with ICU, oxygen, and medicine reserves.
-   - `donationcamps`: Active voluntary donation drives across India.
+   - `hospitals`: Emergency facilities with ICU, oxygen, and ventilator reserves.
    - `reservations`: Atomic holds and fast-track admission records.
 
 #### Useful Compass Filter Queries:
@@ -466,7 +465,7 @@ All pre-seeded demo accounts use the standard password: **`password123`**
 | Role | Email | Password | Primary Capabilities |
 |---|---|---|---|
 | **National Admin** | `admin@lifelink.org` | `password123` | System overview, verify/revoke facilities |
-| **Hospital Admin** | `hospital@apollo.com` | `password123` | Live ICU beds, oxygen, and medicine stock management; admit incoming patients |
+| **Hospital Admin** | `hospital@apollo.com` | `password123` | Live ICU beds, oxygen, and ventilator stock management; admit incoming patients |
 | **Blood Bank Admin** | `bloodbank@city.org` | `password123` | Manage units for all 8 blood groups; stock replenishment monitoring |
 | **Voluntary Donor (O+)** | `rahul.donor@example.com` | `password123` | Toggle donation availability, receive proximity alerts, accept emergency requests |
 | **Universal Donor (O-)** | `vikram.donor@example.com` | `password123` | Protected universal lifesaver tier; emergency compatibility alerts |

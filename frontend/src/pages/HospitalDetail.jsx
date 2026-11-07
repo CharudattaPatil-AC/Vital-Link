@@ -38,8 +38,7 @@ const HospitalDetail = () => {
       if (data.type === 'hospital' && data.facilityId === hospital._id) {
         setHospital((prev) => ({
           ...prev,
-          resources: data.resources,
-          emergencyMedicines: data.emergencyMedicines || prev.emergencyMedicines
+          resources: data.resources
         }));
       }
     };
@@ -71,7 +70,7 @@ const HospitalDetail = () => {
     );
   }
 
-  const { resources, emergencyMedicines } = hospital;
+  const { resources } = hospital;
 
   return (
     <div className="container py-4">
@@ -186,47 +185,6 @@ const HospitalDetail = () => {
             >
               {resources?.ventilators?.available > 0 ? 'Reserve Ventilator' : 'Unavailable'}
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Emergency Medicines */}
-      <h4 className="fw-bold mb-3">Emergency Medicine Stock</h4>
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Medicine Name</th>
-                  <th>Status</th>
-                  <th>Quantity on Hand</th>
-                </tr>
-              </thead>
-              <tbody>
-                {emergencyMedicines && emergencyMedicines.length > 0 ? (
-                  emergencyMedicines.map((med, idx) => (
-                    <tr key={idx}>
-                      <td className="fw-semibold">{med.name}</td>
-                      <td>
-                        {med.available ? (
-                          <span className="badge bg-success">In Stock</span>
-                        ) : (
-                          <span className="badge bg-danger">Out of Stock</span>
-                        )}
-                      </td>
-                      <td>{med.quantity ?? '-'}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="3" className="text-muted text-center py-3">
-                      No specific emergency medicines reported.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
