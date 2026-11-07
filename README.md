@@ -203,6 +203,32 @@ flowchart TD
 
 ---
 
+### E. Autonomous Blood Dispatch & Escalation Agent Workflow
+
+```mermaid
+flowchart TD
+    ReqStart["🚨 Patient Broadcast Created\n(Tier 1: 5 km Radius)"] --> AgentLoop["⏱️ Autonomous Monitoring Daemon\n(Evaluates Active Broadcasts Every 60s)"]
+
+    AgentLoop --> CheckResponses{"Donor Accepted Responses >= Units Needed?"}
+    CheckResponses -->|"Yes"| Fulfilled["✅ Emergency Fulfilled\n(Patient & Hospital Connected)"]
+    
+    CheckResponses -->|"No / Stalled (>= 3-5 mins)"| EvaluateTier{"Current Agent Tier"}
+
+    EvaluateTier -->|"Tier 1 (5 km)"| EscalateTier2["⚡ Escalate to Tier 2 (15 km)\n- Expand Radius 5 km ➔ 15 km\n- WHO Compatibility 4-Tier Match\n- Tool Calling: Automated WhatsApp Alerts\n- Push to Newly Discovered Donors"]
+    
+    EvaluateTier -->|"Tier 2 (15 km)"| EscalateTier3["🚨 Escalate to Tier 3 (30 km)\n- Expand Radius 15 km ➔ 30 km\n- Tool Calling: Automated IVR Voice Calls\n- 'Urgent alert: Press 1 to accept'\n- Immediate Cross-Inventory Scan"]
+
+    EscalateTier2 --> AgentLoop
+    
+    EscalateTier3 --> CrossHoldScan{"Compatible Certified Blood Bank within 35 km?"}
+    CrossHoldScan -->|"Found"| AtomicHold["🏥 Cross-Inventory Autonomous Hold\n- Deduct/Hold Stock in Bank\n- Create Confirmed 2-Hr Reservation\n- Generate Google Maps Navigation URL\n- Route Attendant Directly to Facility"]
+    CrossHoldScan -->|"None Available"| KeepBroadcasting["Continuous Regional IVR & Multi-Channel Broadcast"]
+
+    AtomicHold --> PushHoldAlert["⚡ Socket.IO Emergency Alert to Attendant\n'Cross-Inventory Hold Secured! Route directly'"]
+```
+
+---
+
 ## 🌟 Key Features Overview
 
 ### 1. 🇮🇳 All-India Official Blood Bank Directory (2,439+ Verified Centers)
@@ -272,6 +298,13 @@ flowchart TD
 - **Cascading Proximity Donor Alerts:** Integrates with the WHO compatibility engine to immediately locate eligible, registered voluntary donors within a 15 km radius and pushes instant Socket.IO notifications to their devices.
 - **Facility Low-Stock Control Center:** Blood bank managers can inspect active replenishment broadcasts, view stock deficit warnings, and trigger manual stock scans directly from their dashboard.
 
+### 12. 🚨 Autonomous Blood Dispatch & Escalation Agent
+- **Autonomous Monitoring Loop:** Background daemon scans active emergency blood requests every 60 seconds (evaluating response latency and donor acceptances).
+- **Dynamic Tier & Radius Expansion:** If zero responses or insufficient accepted donors arrive within 3–5 minutes, the agent autonomously expands search boundaries from **5 km ➔ 15 km ➔ 30 km** without waiting for manual human intervention.
+- **Multi-Channel Contact Orchestration:** Uses tool-calling to orchestrate automated **WhatsApp urgent alerts** and triggered **automated IVR voice calls** (*"Urgent alert: A patient at Apollo Hospital needs 2 units of B+ blood. You are 3.2 km away and eligible. Press 1 to accept."*).
+- **Cross-Inventory Autonomous Hold:** If voluntary donors remain unresponsive or when reaching Tier 3, the agent automatically scans the nearest certified blood bank within 35 km, places an atomic hold on compatible units, generates a 2-hour priority reservation, and provides the patient attendant with direct Google Maps turn-by-turn driving directions to the facility gate.
+- **Interactive Simulation Controls:** Patients can force-escalate tiers on demand, and donors can accept or decline via 1-click interactive IVR/WhatsApp simulation prompts directly in their dashboards.
+
 ---
 
 ## 📁 Complete Project Directory Structure
@@ -287,6 +320,10 @@ VitalLink/
 │   │   ├── donorController.js          # Donor availability, proximity & GPS updates
 │   │   ├── hospitalController.js       # Hospital resource tracking & admin verify
 │   │   └── reservationController.js    # Atomic holds & 60-min auto-restock daemon
+│   ├── utils/
+│   │   ├── autoStockReplenish.js       # Automated low-stock trigger & replenishment engine
+│   │   ├── autonomousDispatchAgent.js  # Autonomous blood dispatch, escalation & multi-channel agent
+│   │   └── bloodCompatibility.js       # WHO 4-tier compatibility transfusion matrix
 │   ├── data/
 │   │   ├── kaggle_dataset/
 │   │   │   └── blood-banks.csv         # Raw national registry from Kaggle

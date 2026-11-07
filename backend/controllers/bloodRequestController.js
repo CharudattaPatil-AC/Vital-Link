@@ -6,6 +6,10 @@ const {
   getTierForDonor,
   checkDonorEligibility
 } = require('../utils/bloodCompatibility');
+const {
+  escalateBloodRequest,
+  runAutonomousMonitoringLoop
+} = require('../utils/autonomousDispatchAgent');
 
 // POST /api/blood-requests - Create emergency blood request with Smart Compatibility Engine
 exports.createBloodRequest = async (req, res) => {
@@ -75,7 +79,7 @@ exports.createBloodRequest = async (req, res) => {
       }
     }
 
-    // Attach to blood request
+    // Attach to blood request with initial escalation status
     bloodRequest.matchedDonors = finalMatchedDonors.map(item => ({
       donor: item.donor._id,
       donorBloodGroup: item.donor.bloodGroup,
@@ -83,6 +87,25 @@ exports.createBloodRequest = async (req, res) => {
       matchLabel: item.label,
       status: 'pending'
     }));
+
+    bloodRequest.escalationTier = 1;
+    bloodRequest.escalationHistory = [{
+      tier: 1,
+      radius: searchRadius,
+      action: 'Tier 1 Initial Broadcast (5 km)',
+      summary: `Dispatched request to ${finalMatchedDonors.length} nearby compatible voluntary donors.`,
+      timestamp: new Date()
+    }];
+
+    bloodRequest.dispatchedChannels = finalMatchedDonors.map(item => ({
+      channel: 'websocket',
+      recipientPhone: item.donor.phone || '+91 98765 43210',
+      recipientName: item.donor.name,
+      status: 'delivered',
+      messageText: `Urgent blood request broadcast for ${bloodGroup} (${item.label})`,
+      triggeredAt: new Date()
+    }));
+
     await bloodRequest.save();
 
     // 4. Cross-Inventory Blood Bank Check:
@@ -236,5 +259,102 @@ exports.getActiveRequests = async (req, res) => {
     res.json(requests);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/blood-requests/:id/escalate - Manually or agentic trigger escalation
+exports.escalateRequest = async (req, res) => {
+  try {
+    const io = req.app.get('io');
+    const result = await escalateBloodRequest(req.params.id, io, true);
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+    res.json(result);
+  } catch (error) {
+    console.error('Escalation error:', error);
+    res.status(500).json({ message: 'Error escalating blood request' });
+  }
+};
+
+// POST /api/blood-requests/:id/ivr-action - Simulate/Handle donor accepting via IVR voice prompt or WhatsApp
+exports.respondViaIVR = async (req, res) => {
+  try {
+    const { action, channel } = req.body; // action: 'accept' | 'decline'
+    const requestId = req.params.id;
+    const donorId = req.user._id;
+
+    const bloodRequest = await BloodRequest.findById(requestId);
+    if (!bloodRequest) {
+      return res.status(404).json({ message: 'Blood request not found' });
+    }
+
+    const donorEntry = bloodRequest.matchedDonors.find(
+      d => d.donor.toString() === donorId.toString()
+    );
+
+    const decision = action === 'accept' ? 'accepted' : 'declined';
+
+    if (donorEntry) {
+      donorEntry.status = decision;
+      donorEntry.respondedAt = new Date();
+    }
+
+    // Update or append dispatched channel entry
+    const chType = channel === 'whatsapp' ? 'whatsapp' : 'ivr_call';
+    const channelEntry = bloodRequest.dispatchedChannels.find(
+      c => c.recipientPhone === req.user.phone && c.channel === chType
+    );
+    if (channelEntry) {
+      channelEntry.status = decision;
+    } else {
+      bloodRequest.dispatchedChannels.push({
+        channel: chType,
+        recipientPhone: req.user.phone || '+91 98765 43210',
+        recipientName: req.user.name,
+        status: decision,
+        messageText: `${decision.toUpperCase()} via ${chType === 'whatsapp' ? 'WhatsApp Action Link' : 'Interactive IVR Call'}`,
+        triggeredAt: new Date()
+      });
+    }
+
+    await bloodRequest.save();
+
+    if (decision === 'accepted') {
+      await User.findByIdAndUpdate(donorId, { lastDonationDate: new Date() });
+    }
+
+    // Notify the patient via WebSocket
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${bloodRequest.patient}`).emit('donorResponse', {
+        requestId: bloodRequest._id,
+        donorId,
+        donorName: req.user.name,
+        donorPhone: req.user.phone,
+        status: decision,
+        channel: chType
+      });
+    }
+
+    res.json({
+      message: `Successfully recorded ${decision} via ${chType}`,
+      bloodRequest
+    });
+  } catch (error) {
+    console.error('IVR response error:', error);
+    res.status(500).json({ message: 'Error processing IVR/WhatsApp response' });
+  }
+};
+
+// POST /api/blood-requests/run-escalation-agent - Run background agent loop on demand
+exports.triggerAgentMonitoring = async (req, res) => {
+  try {
+    const io = req.app.get('io');
+    await runAutonomousMonitoringLoop(io);
+    res.json({ message: 'Autonomous blood dispatch monitoring cycle executed successfully' });
+  } catch (error) {
+    console.error('Agent monitoring error:', error);
+    res.status(500).json({ message: 'Failed to run agent monitoring loop' });
   }
 };

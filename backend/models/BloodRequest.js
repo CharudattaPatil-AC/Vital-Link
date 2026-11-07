@@ -49,7 +49,57 @@ const bloodRequestSchema = new mongoose.Schema({
     respondedAt: Date
   }],
   contactPhone: { type: String, required: true },
-  hospitalName: String
+  hospitalName: String,
+
+  // Autonomous Blood Dispatch & Escalation Agent Fields
+  escalationTier: {
+    type: Number,
+    default: 1 // Tier 1: 5km, Tier 2: 15km, Tier 3: 30km
+  },
+  lastEscalatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  escalationHistory: [{
+    tier: Number,
+    radius: Number,
+    action: String,
+    summary: String,
+    timestamp: { type: Date, default: Date.now }
+  }],
+  dispatchedChannels: [{
+    channel: {
+      type: String,
+      enum: ['websocket', 'whatsapp', 'ivr_call']
+    },
+    recipientPhone: String,
+    recipientName: String,
+    distanceKm: Number,
+    status: {
+      type: String,
+      default: 'sent' // 'sent', 'ringing', 'delivered', 'accepted', 'failed'
+    },
+    messageText: String,
+    triggeredAt: { type: Date, default: Date.now }
+  }],
+  autonomousHold: {
+    placed: { type: Boolean, default: false },
+    bloodBank: { type: mongoose.Schema.Types.ObjectId, ref: 'BloodBank' },
+    bloodBankName: String,
+    reservationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reservation' },
+    unitsHeld: { type: Number, default: 0 },
+    bloodGroup: String,
+    pickupAddress: String,
+    contactPhone: String,
+    distanceKm: Number,
+    routingUrl: String,
+    placedAt: Date,
+    status: {
+      type: String,
+      enum: ['active', 'claimed', 'released', 'none'],
+      default: 'none'
+    }
+  }
 }, { timestamps: true });
 
 bloodRequestSchema.index({ location: '2dsphere' });
