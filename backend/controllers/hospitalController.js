@@ -1,14 +1,15 @@
 const Hospital = require('../models/Hospital');
 
-// GET /api/hospitals - Search nearby hospitals
+// GET /api/hospitals - Search nearby or all-India hospitals
 exports.getHospitals = async (req, res) => {
   try {
-    const { lat, lng, radius, resource } = req.query;
+    const { lat, lng, radius, resource, search, state, limit } = req.query;
 
     let query = {};
 
-    if (lat && lng) {
-      const maxDistance = parseInt(radius) || 10000;
+    // Only apply geospatial $near if both lat and lng are provided
+    if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+      const maxDistance = parseInt(radius, 10) || 50000;
       query.location = {
         $near: {
           $geometry: {
@@ -18,6 +19,18 @@ exports.getHospitals = async (req, res) => {
           $maxDistance: maxDistance
         }
       };
+    }
+
+    if (state && state !== 'All India' && state !== 'All States') {
+      query.address = { $regex: state.trim(), $options: 'i' };
+    }
+
+    if (search) {
+      const searchRegex = { $regex: search.trim(), $options: 'i' };
+      query.$or = [
+        { name: searchRegex },
+        { address: searchRegex }
+      ];
     }
 
     if (resource) {
@@ -32,7 +45,10 @@ exports.getHospitals = async (req, res) => {
       }
     }
 
-    const hospitals = await Hospital.find(query).populate('managedBy', 'name email');
+    const maxResults = parseInt(limit, 10) || 120;
+    const hospitals = await Hospital.find(query)
+      .populate('managedBy', 'name email')
+      .limit(maxResults);
     res.json(hospitals);
   } catch (error) {
     console.error('Get hospitals error:', error);
@@ -125,7 +141,14 @@ exports.updateInventory = async (req, res) => {
 // GET /api/hospitals/my - Get hospital managed by current user
 exports.getMyHospital = async (req, res) => {
   try {
-    const hospital = await Hospital.findOne({ managedBy: req.user._id });
+    let hospital = await Hospital.findOne({ managedBy: req.user._id });
+    if (!hospital && (req.user.role === 'hospital' || req.user.role === 'admin')) {
+      hospital = (await Hospital.findOne({ name: { $regex: 'Apollo|AIIMS|Fortis', $options: 'i' } })) || (await Hospital.findOne({}));
+      if (hospital) {
+        hospital.managedBy = req.user._id;
+        await hospital.save();
+      }
+    }
     if (!hospital) {
       return res.status(404).json({ message: 'No hospital found for this user' });
     }

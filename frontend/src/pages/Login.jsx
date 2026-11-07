@@ -38,7 +38,11 @@ const Login = () => {
           break;
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      if (!err.response) {
+        setError('Cannot connect to backend API at http://localhost:5000. Please ensure the backend server is running ("npm run dev" or "npm run server").');
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }

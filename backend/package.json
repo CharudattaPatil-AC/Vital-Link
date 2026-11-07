@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "seed": "node seed.js",
     "import:kaggle": "node scripts/convertKaggleData.js",
+    "import:hospitals": "node scripts/convertHospitalData.js",
     "doc:sync": "node scripts/syncReadme.js"
   },
   "keywords": [],

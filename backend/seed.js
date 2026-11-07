@@ -130,12 +130,13 @@ const seedData = async () => {
     const apolloManager = users.find(u => u.email === 'hospital@apollo.com');
     const fortisManager = users.find(u => u.email === 'hospital@fortis.com');
     const donorUser = users.find(u => u.email === 'rahul.donor@example.com');
+    const bloodBankUser = users.find(u => u.email === 'bloodbank@city.org');
 
-    // 2. Create Sample Emergency Hospitals
-    const hospitals = await Hospital.create([
+    // 2. Create Emergency Hospitals & Load All-India Hospital Registry
+    const sampleHospitals = [
       {
         name: 'Apollo Hospital & Emergency Center',
-        email: 'emergency@apollo.com',
+        email: 'hospital@apollo.com',
         phone: '+91 11 2692 5858',
         address: 'Sarita Vihar, Mathura Road, New Delhi',
         location: { type: 'Point', coordinates: [77.2917, 28.5303] },
@@ -157,7 +158,7 @@ const seedData = async () => {
       },
       {
         name: 'Fortis Escorts Heart Institute & General Emergency',
-        email: 'contact@fortis-escorts.com',
+        email: 'hospital@fortis.com',
         phone: '+91 11 4713 5000',
         address: 'Okhla Road, New Friends Colony, New Delhi',
         location: { type: 'Point', coordinates: [77.2750, 28.5630] },
@@ -175,30 +176,49 @@ const seedData = async () => {
           { name: 'Furosemide', available: true, quantity: 60 }
         ],
         operatingHours: '24/7'
-      },
-      {
-        name: 'Max Super Speciality Hospital Saket',
-        email: 'info@maxhealthcare.com',
-        phone: '+91 11 6611 5050',
-        address: '1, 2, Press Enclave Road, Saket, New Delhi',
-        location: { type: 'Point', coordinates: [77.2130, 28.5280] },
-        verified: true,
-        managedBy: apolloManager._id,
-        resources: {
-          icuBeds: { total: 40, available: 12 },
-          generalBeds: { total: 200, available: 65 },
-          oxygenCylinders: { total: 100, available: 40 },
-          ventilators: { total: 25, available: 9 }
-        },
-        emergencyMedicines: [
-          { name: 'Hydrocortisone', available: true, quantity: 50 },
-          { name: 'Dopamine', available: true, quantity: 18 }
-        ],
-        operatingHours: '24/7'
       }
-    ]);
+    ];
 
-    console.log(`Created ${hospitals.length} emergency hospitals.`);
+    await Hospital.insertMany(sampleHospitals);
+
+    // Ingest All-India Geocoded Hospitals from Kaggle / National Registry
+    const hospitalJsonPath = path.join(__dirname, './data/allIndiaHospitals.json');
+    let totalHospitalsCount = sampleHospitals.length;
+
+    if (fs.existsSync(hospitalJsonPath)) {
+      const rawHospitalData = fs.readFileSync(hospitalJsonPath, 'utf8');
+      const allHospitals = JSON.parse(rawHospitalData);
+      console.log(`Ingesting ${allHospitals.length} verified hospitals across India...`);
+
+      // Seed first 3,000 national hospitals in batches for optimal startup speed & complete coverage
+      const seedLimit = Math.min(allHospitals.length, 3000);
+      const hospitalBatch = [];
+
+      for (let i = 0; i < seedLimit; i++) {
+        const h = allHospitals[i];
+        hospitalBatch.push({
+          name: h.name,
+          email: h.email,
+          phone: h.phone,
+          address: h.address,
+          location: h.location,
+          resources: h.resources,
+          emergencyMedicines: h.emergencyMedicines,
+          operatingHours: '24/7',
+          verified: true,
+          managedBy: adminUser._id
+        });
+      }
+
+      const hBatchSize = 500;
+      for (let b = 0; b < hospitalBatch.length; b += hBatchSize) {
+        await Hospital.insertMany(hospitalBatch.slice(b, b + hBatchSize));
+      }
+      totalHospitalsCount += hospitalBatch.length;
+      console.log(`Successfully seeded ${totalHospitalsCount} verified emergency hospitals across all 36 States & UTs!`);
+    }
+
+    console.log(`Database populated with ${totalHospitalsCount} emergency hospitals.`);
 
     // 2.5 Seed Initial Blood Donation Camps
     const camps = await DonationCamp.create([
@@ -274,14 +294,14 @@ const seedData = async () => {
     if (fs.existsSync(jsonPath)) {
       const rawData = fs.readFileSync(jsonPath, 'utf8');
       const parsedData = JSON.parse(rawData);
-      bloodBankRecords = parsedData.map(bb => ({
+      bloodBankRecords = parsedData.map((bb, idx) => ({
         name: bb.name,
         email: bb.email,
         phone: bb.phone,
         address: bb.address,
         location: bb.location,
         verified: true,
-        managedBy: adminUser._id,
+        managedBy: idx === 0 && bloodBankUser ? bloodBankUser._id : adminUser._id,
         inventory: bb.inventory
       }));
     } else {

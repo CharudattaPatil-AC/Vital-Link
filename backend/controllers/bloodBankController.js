@@ -106,7 +106,7 @@ exports.updateInventory = async (req, res) => {
       return res.status(404).json({ message: 'Blood bank not found' });
     }
 
-    if (bloodBank.managedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (bloodBank.managedBy && bloodBank.managedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin' && req.user.role !== 'bloodbank') {
       return res.status(403).json({ message: 'Not authorized to update this blood bank' });
     }
 
@@ -184,7 +184,15 @@ exports.triggerFacilityAutoCheck = async (req, res) => {
 // GET /api/bloodbanks/my - Get blood bank managed by current user
 exports.getMyBloodBank = async (req, res) => {
   try {
-    const bloodBank = await BloodBank.findOne({ managedBy: req.user._id });
+    let bloodBank = await BloodBank.findOne({ managedBy: req.user._id });
+    if (!bloodBank && (req.user.role === 'bloodbank' || req.user.role === 'admin')) {
+      // Automatically assign the flagship city blood bank to this admin so dashboard is ready
+      bloodBank = (await BloodBank.findOne({ name: { $regex: 'Red Cross|Central|City', $options: 'i' } })) || (await BloodBank.findOne({}));
+      if (bloodBank) {
+        bloodBank.managedBy = req.user._id;
+        await bloodBank.save();
+      }
+    }
     if (!bloodBank) {
       return res.status(404).json({ message: 'No blood bank found for this user' });
     }

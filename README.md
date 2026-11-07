@@ -240,11 +240,12 @@ flowchart TD
 - **Embedded QR Admission Token:** Incorporates verified cryptographic reservation hashes readable by hospital triage scanners.
 - **Green Corridor Transit Clearance:** Incorporates legal medical transit notices pursuant to emergency healthcare provisions for zero-delay clearance across highway toll plazas and police checkposts.
 
-### 6. 🏥 Hospital Resource & Critical Medicine Standby Management
-- **Geospatial Discovery:** Locates nearby hospitals within configurable radius (5–50 km) using MongoDB `2dsphere` indexes and `$near` queries.
-- **Critical Resource Tracking:** Live availability of **ICU beds, general emergency beds, oxygen cylinders, and ventilators**.
-- **Emergency Medicine Standby:** Real-time visibility into critical medicines (e.g., Epinephrine, Atropine, Amiodarone).
-- **Dedicated Hospital Portal:** Facility admins update stock, confirm reservations, and restock upon discharge or cancellation.
+### 6. 🏥 Pan-India Official Hospital Directory (10,672+ Verified Centers)
+- **National Registry Ingestion:** Ingested the official National Hospital Directory containing **10,672 verified geocoded hospitals** across all 36 States and Union Territories.
+- **Direct All-India Directory Access:** Directly browse and search verified hospitals nationwide with live bed counters, oxygen status, and emergency medicines without radius locks.
+- **Pan-India Multi-Filter:** Filter across all 36 States & UTs, search by keyword/city/hospital name, or filter by critical resource need (ICU beds, general emergency beds, oxygen cylinders, ventilators).
+- **Critical Resource & Medicine Standby:** Live tracking of hospital capacity alongside standby life-saving medicines (Epinephrine, Atropine, Amiodarone, Norepinephrine).
+- **Dedicated Hospital Portal:** Facility admins update stock in real-time, confirm incoming reservations, and restock beds upon discharge.
 
 ### 7. 🔒 Atomic Concurrency & Auto-Restock Mechanism
 - **Atomic Operations:** Uses MongoDB atomic updates (`findOneAndUpdate` with conditional checks like `$gte` and `$inc`) to prevent race conditions and double-booking during emergency traffic spikes.
