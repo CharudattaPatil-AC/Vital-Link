@@ -52,12 +52,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Periodic cleanup for expired reservations (runs every 60s)
-const { checkExpiredReservations } = require('./controllers/reservationController');
-setInterval(() => {
-  checkExpiredReservations(io);
-}, 60000);
-
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

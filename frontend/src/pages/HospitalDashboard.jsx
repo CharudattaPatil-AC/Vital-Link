@@ -434,16 +434,16 @@ const HospitalDashboard = () => {
                         {res.status === 'pending' && (
                           <div className="btn-group btn-group-sm">
                             <button
-                              className="btn btn-success"
+                              className="btn btn-success fw-semibold"
                               onClick={() => handleReservationStatus(res._id, 'confirmed')}
                             >
-                              Confirm
+                              ✓ Admit Patient
                             </button>
                             <button
                               className="btn btn-outline-danger"
                               onClick={() => handleReservationStatus(res._id, 'cancelled')}
                             >
-                              Reject & Restock
+                              ✕ Reject & Restock
                             </button>
                           </div>
                         )}
@@ -452,7 +452,7 @@ const HospitalDashboard = () => {
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => handleReservationStatus(res._id, 'completed')}
                           >
-                            Mark Completed
+                            Discharge & Restock Bed
                           </button>
                         )}
                       </td>

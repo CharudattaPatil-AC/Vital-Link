@@ -49,7 +49,7 @@ const ReservationModal = ({ show, onClose, facility, facilityType, resourceType,
       }
 
       const res = await API.post('/reservations', payload);
-      setSuccess('Reservation created successfully! The resource is held for 1 hour.');
+      setSuccess('Reservation placed successfully! The hospital has received your emergency hold.');
       setTimeout(() => {
         if (onReserved) onReserved(res.data);
         onClose();
@@ -93,7 +93,7 @@ const ReservationModal = ({ show, onClose, facility, facilityType, resourceType,
                   required
                 />
                 <div className="form-text small">
-                  Emergency holding limit is subject to facility confirmation. Holds expire in 60 minutes.
+                  Your bed is held pending admission confirmation by the hospital emergency team.
                 </div>
               </div>
 

@@ -47,8 +47,7 @@ exports.createReservation = async (req, res) => {
       resourceType,
       quantity: qty,
       notes,
-      status: 'pending',
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+      status: 'pending'
     });
 
     // Emit real-time update
@@ -60,9 +59,9 @@ exports.createReservation = async (req, res) => {
         facilityType
       });
       io.emit('inventoryUpdate', {
-        type: facilityType,
+        type: 'hospital',
         facilityId,
-        facility
+        resources: facility.resources
       });
     }
 
@@ -86,12 +85,6 @@ exports.getReservations = async (req, res) => {
         query.facilityId = hospital._id;
         query.facilityType = 'hospital';
       }
-    } else if (req.user.role === 'bloodbank') {
-      const bloodBank = await BloodBank.findOne({ managedBy: req.user._id });
-      if (bloodBank) {
-        query.facilityId = bloodBank._id;
-        query.facilityType = 'bloodbank';
-      }
     }
 
     const reservations = await Reservation.find(query)
@@ -104,7 +97,7 @@ exports.getReservations = async (req, res) => {
   }
 };
 
-// PUT /api/reservations/:id/status - Update reservation status
+// PUT /api/reservations/:id/status - Update reservation status (confirmed/cancelled/completed)
 exports.updateReservationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -114,36 +107,43 @@ exports.updateReservationStatus = async (req, res) => {
       return res.status(404).json({ message: 'Reservation not found' });
     }
 
-    // If cancelling, return the resource
-    if (status === 'cancelled' && reservation.status === 'pending') {
-      if (reservation.facilityType === 'hospital') {
-        const resourcePath = {
-          icuBed: 'resources.icuBeds.available',
-          generalBed: 'resources.generalBeds.available',
-          oxygenCylinder: 'resources.oxygenCylinders.available',
-          ventilator: 'resources.ventilators.available'
-        };
-        const field = resourcePath[reservation.resourceType];
-        if (field) {
-          await Hospital.findByIdAndUpdate(reservation.facilityId, {
-            $inc: { [field]: reservation.quantity }
+    const previousStatus = reservation.status;
+    const io = req.app.get('io');
+
+    // Restock bed if:
+    // 1. Pending reservation is cancelled or rejected
+    // 2. Confirmed patient is discharged / marked completed
+    const shouldRestock =
+      (status === 'cancelled' && previousStatus === 'pending') ||
+      (status === 'completed' && previousStatus === 'confirmed');
+
+    if (shouldRestock && reservation.facilityType === 'hospital') {
+      const resourcePath = {
+        icuBed: 'resources.icuBeds.available',
+        generalBed: 'resources.generalBeds.available',
+        oxygenCylinder: 'resources.oxygenCylinders.available',
+        ventilator: 'resources.ventilators.available'
+      };
+      const field = resourcePath[reservation.resourceType];
+      if (field) {
+        const updatedHospital = await Hospital.findByIdAndUpdate(
+          reservation.facilityId,
+          { $inc: { [field]: reservation.quantity } },
+          { new: true }
+        );
+        if (io && updatedHospital) {
+          io.emit('inventoryUpdate', {
+            type: 'hospital',
+            facilityId: updatedHospital._id,
+            resources: updatedHospital.resources
           });
         }
-      } else if (reservation.facilityType === 'bloodbank') {
-        await BloodBank.findOneAndUpdate(
-          {
-            _id: reservation.facilityId,
-            'inventory.bloodGroup': reservation.bloodGroup
-          },
-          { $inc: { 'inventory.$.unitsAvailable': reservation.quantity } }
-        );
       }
     }
 
     reservation.status = status;
     await reservation.save();
 
-    const io = req.app.get('io');
     if (io) {
       io.emit('reservationUpdate', { reservation });
     }
@@ -152,56 +152,5 @@ exports.updateReservationStatus = async (req, res) => {
   } catch (error) {
     console.error('Update reservation status error:', error);
     res.status(500).json({ message: 'Server error updating reservation' });
-  }
-};
-
-// Automated Expiration Cleanup: Check & restock expired pending holds
-exports.checkExpiredReservations = async (io) => {
-  try {
-    const now = new Date();
-    const expiredList = await Reservation.find({
-      status: 'pending',
-      expiresAt: { $lt: now }
-    });
-
-    for (const res of expiredList) {
-      res.status = 'expired';
-      await res.save();
-
-      // Return held inventory
-      if (res.facilityType === 'hospital') {
-        const resourcePath = {
-          icuBed: 'resources.icuBeds.available',
-          generalBed: 'resources.generalBeds.available',
-          oxygenCylinder: 'resources.oxygenCylinders.available',
-          ventilator: 'resources.ventilators.available'
-        };
-        const field = resourcePath[res.resourceType];
-        if (field) {
-          const updated = await Hospital.findByIdAndUpdate(
-            res.facilityId,
-            { $inc: { [field]: res.quantity } },
-            { new: true }
-          );
-          if (io && updated) {
-            io.emit('inventoryUpdate', {
-              type: 'hospital',
-              facilityId: updated._id,
-              resources: updated.resources
-            });
-          }
-        }
-      }
-
-      if (io) {
-        io.emit('reservationUpdate', { reservation: res });
-      }
-    }
-
-    if (expiredList.length > 0) {
-      console.log(`Auto-cleaned and restocked ${expiredList.length} expired reservations.`);
-    }
-  } catch (err) {
-    console.error('Error running reservation expiry check:', err.message);
   }
 };

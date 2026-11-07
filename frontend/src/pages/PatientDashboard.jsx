@@ -113,7 +113,7 @@ const PatientDashboard = () => {
                   <th>Type</th>
                   <th>Resource</th>
                   <th>Quantity</th>
-                  <th>Expires / Created</th>
+                  <th>Booked At</th>
                   <th>Status</th>
                   <th className="text-end">Actions</th>
                 </tr>
@@ -135,7 +135,7 @@ const PatientDashboard = () => {
                       </td>
                       <td className="fw-bold">{res.quantity}</td>
                       <td className="small text-muted">
-                        {res.expiresAt ? new Date(res.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '1 Hour'}
+                        {new Date(res.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td>
                         <span

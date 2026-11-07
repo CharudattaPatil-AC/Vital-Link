@@ -44,7 +44,6 @@ flowchart TD
         AuthMiddleware["JWT Auth & Role-Based RBAC Guards"]
         CompatEngine["Universal Blood Compatibility Engine (WHO Transfusion Rules)"]
         SocketServer["Socket.IO Real-Time Dispatch Server"]
-        CleanupDaemon["60-Second Auto-Restock Expiration Daemon"]
     end
 
     subgraph DataLayer["💾 Persistence & Geospatial Indexing (MongoDB)"]
@@ -69,8 +68,6 @@ flowchart TD
     CompatEngine --> DB_BloodBanks
     CompatEngine --> DB_Users
     Router --> DataLayer
-    CleanupDaemon -->|"Periodic 60s Check & Restock"| DB_Reservations
-    CleanupDaemon -.->|"Restock Broadcast"| SocketServer
     Kaggle -->|"One-time ETL / Seeding"| DB_BloodBanks
     UI_DualMap --> GMaps
     UI_DualMap --> OSM
@@ -89,7 +86,6 @@ sequenceDiagram
     participant Frontend as 💻 LifeLink React UI
     participant Backend as ⚙️ Express Backend API
     participant MongoDB as 💾 MongoDB Database
-    participant Daemon as ⏱️ Auto-Restock Daemon
     actor Triage as 🏥 Hospital Triage Desk
 
     Patient->>Frontend: Search nearby emergency facilities (GPS coordinates)
@@ -99,20 +95,19 @@ sequenceDiagram
     Backend-->>Frontend: Return list of hospitals with live bed/O2 stock
 
     Patient->>Frontend: Click "Reserve Resource" (e.g. 1x ICU Bed)
-    Frontend->>Backend: POST /api/reservations (resource: 'icuBeds', qty: 1)
+    Frontend->>Backend: POST /api/reservations (resource: 'icuBed', qty: 1)
     Note over Backend,MongoDB: Atomic findOneAndUpdate check (stock >= 1)
-    Backend->>MongoDB: Deduct 1 bed & insert Reservation (expiresAt: now + 60 min)
-    Backend-->>Frontend: Reservation Confirmed (Token #ABC12345)
+    Backend->>MongoDB: Deduct 1 bed & create Reservation (status: 'pending')
+    Backend-->>Frontend: Reservation Placed (Real-time Broadcast)
 
-    alt Patient arrives within 60 minutes
-        Patient->>Triage: Present Reservation Token at admission desk
-        Triage->>Backend: PUT /api/reservations/:id/confirm
-        Backend->>MongoDB: Status -> "admitted"
-        Backend-->>Triage: Patient Admitted
-    else Timer expires (No arrival in 60 minutes)
-        Daemon->>MongoDB: Find expired reservations (status: 'active' AND expiresAt < now)
-        Daemon->>MongoDB: Restore 1x ICU Bed to hospital inventory & mark 'expired'
-        Daemon-->>Frontend: Emit Socket.IO 'inventoryUpdate' event
+    alt Hospital Admits Patient
+        Triage->>Backend: PUT /api/reservations/:id/status (status: 'confirmed')
+        Backend->>MongoDB: Status -> "confirmed" (Patient Admitted)
+        Backend-->>Frontend: Real-time update to Patient Dashboard
+    else Hospital Rejects or Patient Cancels
+        Triage->>Backend: PUT /api/reservations/:id/status (status: 'cancelled')
+        Backend->>MongoDB: Restore 1x Bed to inventory & status -> "cancelled"
+        Backend-->>Frontend: Emit Socket.IO 'inventoryUpdate' event
     end
 ```
 
@@ -176,9 +171,9 @@ flowchart TD
 - **Critical Resource Standby:** Live tracking of hospital capacity across ICU Beds, Ventilators, General Beds, and Oxygen Cylinders.
 - **Dedicated Hospital Portal:** Facility admins update stock in real-time, confirm incoming reservations, and restock beds upon discharge.
 
-### 5. 🔒 Atomic Concurrency & Auto-Restock Mechanism
+### 5. 🔒 Atomic Concurrency & Direct Admission Restock
 - **Atomic Operations:** Uses MongoDB atomic updates (`findOneAndUpdate` with conditional checks like `$gte` and `$inc`) to prevent race conditions and double-booking during emergency traffic spikes.
-- **Auto-Expiration Background Cleanup:** An automated background daemon reviews pending holds every 60 seconds; any unconfirmed reservation exceeding its expiry window is automatically marked `expired` and inventory is restocked to the facility in real time.
+- **Direct Admission & Restock:** Hospital triage desk directly admits incoming patients or cancels/discharges reservations to immediately restock beds in real time.
 
 ### 6. 🛡️ System Administration & Facility Verification
 - Dedicated Admin dashboard with total network metrics (hospitals, blood banks, reservations).
@@ -196,7 +191,7 @@ VitalLink/
 │   │   ├── bloodBankController.js      # Blood bank search & inventory management
 │   │   ├── bloodRequestController.js   # Emergency compatibility blood bank matching
 │   │   ├── hospitalController.js       # Hospital resource tracking & admin verify
-│   │   └── reservationController.js    # Atomic holds & 60-min auto-restock daemon
+│   │   └── reservationController.js    # Atomic holds, admission & restock controller
 │   ├── data/
 │   │   ├── kaggle_dataset/
 │   │   │   └── blood-banks.csv         # Raw national registry from Kaggle
@@ -275,7 +270,7 @@ VitalLink/
 | **User** | `users` | `name`, `email`, `password`, `phone`, `role` (`patient`, `hospital`, `bloodbank`, `admin`), `bloodGroup`, `location` | `email: 1`, `location: '2dsphere'` |
 | **Hospital** | `hospitals` | `name`, `email`, `phone`, `address`, `location`, `resources` (`icuBeds`, `generalBeds`, `oxygenCylinders`, `ventilators`), `verified`, `managedBy` | `location: '2dsphere'`, `verified: 1` |
 | **BloodBank** | `bloodbanks` | `name`, `email`, `phone`, `address`, `location`, `inventory` (`bloodGroup`, `unitsAvailable`), `verified`, `managedBy` | `location: '2dsphere'`, `inventory.bloodGroup: 1` |
-| **Reservation** | `reservations` | `patient`, `facilityId`, `facilityModel` (`Hospital`), `facilityName`, `resourceType`, `quantity`, `status` (`active`, `confirmed`, `cancelled`, `expired`), `expiresAt` (60 min) | `patient: 1`, `facilityId: 1`, `status: 1`, `expiresAt: 1` |
+| **Reservation** | `reservations` | `patient`, `facilityId`, `facilityModel` (`Hospital`), `facilityName`, `resourceType`, `quantity`, `status` (`pending`, `confirmed`, `cancelled`, `completed`) | `patient: 1`, `facilityId: 1`, `status: 1` |
 | **BloodRequest** | `bloodrequests` | `patient`, `hospitalName`, `bloodGroup`, `urgency` (`normal`, `critical`), `unitsNeeded`, `status` (`active`, `fulfilled`, `cancelled`), `matchedBloodBanks` (`bloodBank`, `unitsAvailable`, `distanceKm`), `location` | `location: '2dsphere'`, `status: 1` |
 
 ---
@@ -283,7 +278,7 @@ VitalLink/
 ## 🔌 REST API Endpoints Reference
 
 ### Authentication (`/api/auth`)
-- `POST /api/auth/register` — Register a new account (`patient`, `donor`, `hospital`, `bloodbank`).
+- `POST /api/auth/register` — Register a new account (`patient`, `hospital`, `bloodbank`).
 - `POST /api/auth/login` — Login with credentials and receive a JWT.
 - `GET /api/auth/me` — Retrieve current authenticated user profile (`Protected`).
 
@@ -304,11 +299,10 @@ VitalLink/
 - `PUT /api/bloodbanks/:id/verify` — Toggle verified blood bank status (`Admin Only`).
 
 ### Reservations (`/api/reservations`)
-- `POST /api/reservations` — Create atomic hospital bed reservation with 60-minute holding timer (`Patient`).
+- `POST /api/reservations` — Create atomic hospital bed reservation (`Patient`).
 - `GET /api/reservations/my` — List all reservations made by the logged-in patient (`Patient`).
 - `GET /api/reservations/facility` — List reservations incoming to a hospital (`Facility Admin`).
-- `PUT /api/reservations/:id/confirm` — Mark reservation admitted upon patient arrival (`Facility Admin`).
-- `PUT /api/reservations/:id/cancel` — Cancel hold and immediately release inventory back to facility.
+- `PUT /api/reservations/:id/status` — Mark reservation admitted, cancelled, or discharged (`Facility Admin / Patient`).
 
 ### Emergency Blood Requests (`/api/blood-requests`)
 - `POST /api/blood-requests` — Broadcast emergency blood need and match nearby verified blood banks holding compatible units (`Patient`).
@@ -325,9 +319,9 @@ LifeLink uses Socket.IO to provide instant peer-to-peer and broadcast emergency 
 | Event Name | Direction | Payload | Description |
 |---|---|---|---|
 | `newBloodRequest` | Server $\to$ All Clients | `{ bloodRequest }` | Emitted when an emergency blood broadcast is posted; informs network of urgent blood requirements. |
-| `inventoryUpdate` | Server $\to$ All Connected Clients | `{ type: 'hospital'/'bloodbank', facilityId, inventory/resources }` | Real-time broadcast whenever bed or blood stock changes or an expired hold auto-restocks. |
+| `inventoryUpdate` | Server $\to$ All Connected Clients | `{ type: 'hospital'/'bloodbank', facilityId, resources }` | Real-time broadcast whenever bed or blood stock changes or a bed is restocked. |
 | `reservationCreated` | Server $\to$ Facility Room | `{ reservationId, facilityId, resourceType, quantity, patientName }` | Alerts hospital triage reception that a critical resource has been reserved. |
-| `reservationStatus` | Server $\to$ Patient Room | `{ reservationId, status: 'confirmed'/'cancelled'/'expired' }` | Updates the patient's dashboard in real time when triage marks them admitted or hold expires. |
+| `reservationStatus` | Server $\to$ Patient Room | `{ reservationId, status: 'confirmed'/'cancelled'/'completed' }` | Updates the patient's dashboard in real time when triage marks them admitted or cancelled. |
 
 ---
 
@@ -458,7 +452,7 @@ All pre-seeded demo accounts use the standard password: **`password123`**
 
 | Name / GitHub | Role & Department | Core Ownership |
 |---|---|---|
-| **[Charudatta Patil](https://github.com/CharudattaPatil-AC)** | **Project Lead & Backend / Real-Time Systems Lead** | Server architecture, atomic concurrency engine, 60s auto-restock daemon, and WebSocket rooms |
+| **[Charudatta Patil](https://github.com/CharudattaPatil-AC)** | **Project Lead & Backend / Real-Time Systems Lead** | Server architecture, atomic concurrency engine, bed admission & restock workflow, and WebSocket rooms |
 | **Team Member 2** | **Data Engineering & Clinical Algorithms Lead** | Kaggle 2,439 blood banks dataset ingestion, MongoDB `2dsphere` spatial indexing, 4-tier WHO compatibility engine, and scarcity analytics |
 | **Team Member 3** | **Frontend Architecture & GIS / Document Lead** | React 18 SPA, dual map engine (Leaflet + Google Maps), QR fast-track pass, client-side vector PDF generator, and donation drives |
 

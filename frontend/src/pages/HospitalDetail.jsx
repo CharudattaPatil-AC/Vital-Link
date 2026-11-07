@@ -197,7 +197,7 @@ const HospitalDetail = () => {
         facilityType="hospital"
         resourceType={selectedResourceType}
         onReserved={() => {
-          setReserveSuccess('Your emergency reservation request has been placed! Held for 1 hour.');
+          setReserveSuccess('Your emergency reservation request has been placed! The hospital has been notified.');
           fetchHospital();
         }}
       />

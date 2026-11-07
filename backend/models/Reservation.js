@@ -3,21 +3,19 @@ const mongoose = require('mongoose');
 const reservationSchema = new mongoose.Schema({
   patient: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   facilityId: { type: mongoose.Schema.Types.ObjectId, required: true },
-  facilityType: { type: String, enum: ['hospital', 'bloodbank'], required: true },
+  facilityType: { type: String, enum: ['hospital'], default: 'hospital' },
   facilityName: String,
   resourceType: {
     type: String,
-    enum: ['icuBed', 'generalBed', 'oxygenCylinder', 'ventilator', 'blood'],
+    enum: ['icuBed', 'generalBed', 'oxygenCylinder', 'ventilator'],
     required: true
   },
-  bloodGroup: String,
   quantity: { type: Number, default: 1 },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled', 'expired', 'completed'],
+    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
     default: 'pending'
   },
-  expiresAt: Date,
   notes: String
 }, { timestamps: true });
 
