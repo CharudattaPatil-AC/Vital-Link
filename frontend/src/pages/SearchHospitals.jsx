@@ -230,7 +230,7 @@ const SearchHospitals = () => {
               </div>
 
               <div className="text-muted small">
-                Region: <span className="fw-bold text-dark">{selectedState}</span>
+                Coverage: <span className="fw-bold text-dark">All-India Emergency Directory</span>
                 {resource && <span> • Filtered by <strong>{resource}</strong></span>}
               </div>
             </div>
@@ -273,7 +273,7 @@ const SearchHospitals = () => {
         <div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <span className="fw-semibold text-muted">
-              Displaying <strong>{hospitals.length}</strong> verified hospitals across {selectedState === 'All India' ? 'India' : selectedState}
+              Displaying <strong>{hospitals.length}</strong> verified emergency hospitals nationwide
             </span>
             <span className="badge bg-success-subtle text-success border border-success">
               ● Live bed counters active
@@ -299,7 +299,6 @@ const SearchHospitals = () => {
             type="button"
             className="btn btn-outline-danger btn-sm"
             onClick={() => {
-              setSelectedState('All India');
               setSearchTerm('');
               setResource('');
               handleClearGPS();

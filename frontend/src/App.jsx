@@ -31,7 +31,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/search/hospitals" element={<SearchHospitals />} />
+            <Route path="/hospitals" element={<SearchHospitals />} />
             <Route path="/search/bloodbanks" element={<SearchBloodBanks />} />
+            <Route path="/bloodbanks" element={<SearchBloodBanks />} />
             <Route path="/camps" element={<DonationCamps />} />
             <Route path="/analytics/scarcity" element={<ScarcityAnalytics />} />
             <Route path="/hospitals/:id" element={<HospitalDetail />} />
