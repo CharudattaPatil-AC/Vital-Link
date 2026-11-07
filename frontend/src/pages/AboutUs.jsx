@@ -75,36 +75,6 @@ const AboutUs = () => {
           </div>
         </div>
 
-        {/* Technology Stack Details */}
-        <div className="card border-0 shadow-sm p-4 mb-5 bg-white">
-          <h4 className="fw-bold mb-3 text-center">💻 Technical Architecture & Stack</h4>
-          <div className="row g-3 text-center">
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-light rounded border">
-                <div className="fw-bold text-danger">Frontend</div>
-                <div className="small text-muted">ReactJS 18, Vite, Bootstrap 5</div>
-              </div>
-            </div>
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-light rounded border">
-                <div className="fw-bold text-danger">Backend API</div>
-                <div className="small text-muted">NodeJS, ExpressJS REST API</div>
-              </div>
-            </div>
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-light rounded border">
-                <div className="fw-bold text-danger">Database</div>
-                <div className="small text-muted">MongoDB with 2dsphere GIS</div>
-              </div>
-            </div>
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-light rounded border">
-                <div className="fw-bold text-danger">Security</div>
-                <div className="small text-muted">JWT Auth & Role-Based RBAC</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Meet the Developers Section */}
         <div className="text-center mb-4">
