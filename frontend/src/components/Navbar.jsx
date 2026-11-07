@@ -56,6 +56,12 @@ const Navbar = () => {
               <Link className="nav-link text-white" to="/search/bloodbanks">Blood Banks</Link>
             </li>
             <li className="nav-item">
+              <Link className="nav-link text-white" to="/about">About Us</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link text-white" to="/contact">Contact Us</Link>
+            </li>
+            <li className="nav-item">
               <Link className="nav-link text-white fw-semibold" to="/blood-request/create">
                 🚨 Emergency Request
               </Link>

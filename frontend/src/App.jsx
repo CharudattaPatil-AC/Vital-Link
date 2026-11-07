@@ -16,6 +16,8 @@ import BloodBankDashboard from './pages/BloodBankDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import CreateBloodRequest from './pages/CreateBloodRequest';
 import AdminDashboard from './pages/AdminDashboard';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
           <NavbarComponent />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/search/hospitals" element={<SearchHospitals />} />

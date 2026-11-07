@@ -43,6 +43,7 @@ app.use('/api/hospitals', require('./routes/hospitals'));
 app.use('/api/bloodbanks', require('./routes/bloodBanks'));
 app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/blood-requests', require('./routes/bloodRequests'));
+app.use('/api/contact', require('./routes/contact'));
 
 // Global Error Handler
 app.use((err, req, res, next) => {

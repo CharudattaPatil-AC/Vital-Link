@@ -199,6 +199,7 @@ VitalLink/
 │   ├── models/
 │   │   ├── BloodBank.js                # Blood bank model with 2dsphere index
 │   │   ├── BloodRequest.js             # Blood broadcast model with matched blood banks
+│   │   ├── ContactMessage.js           # Contact inquiry & feedback messages
 │   │   ├── Hospital.js                 # Hospital resources (ICU, O2, beds, ventilators)
 │   │   ├── Reservation.js              # Atomic reservation holds with expiration
 │   │   └── User.js                     # Multi-role user accounts (patient, facility, admin)
@@ -206,6 +207,7 @@ VitalLink/
 │   │   ├── auth.js                     # /api/auth routes
 │   │   ├── bloodBanks.js               # /api/bloodbanks routes
 │   │   ├── bloodRequests.js            # /api/blood-requests routes
+│   │   ├── contact.js                  # /api/contact routes
 │   │   ├── hospitals.js                # /api/hospitals routes
 │   │   └── reservations.js             # /api/reservations routes
 │   ├── scripts/
@@ -234,18 +236,20 @@ VitalLink/
 │   │   │   ├── AuthContext.jsx         # User auth context backed by sessionStorage
 │   │   │   └── SocketContext.jsx       # Global Socket.IO client connection context
 │   │   ├── pages/
-│   │   │   ├── AdminDashboard.jsx      # Admin metrics & facility verification toggles
-│   │   │   ├── BloodBankDashboard.jsx  # Inventory management for blood bank managers
-│   │   │   ├── BloodBankDetail.jsx     # Detail view with live blood group inventory
-│   │   │   ├── CreateBloodRequest.jsx  # Blood request creator with compatibility preview
-│   │   │   ├── Home.jsx                # Landing page with active emergencies & quick links
-│   │   │   ├── HospitalDashboard.jsx   # Resource manager for hospital administrators
-│   │   │   ├── HospitalDetail.jsx      # Hospital resources (ICU, Beds, O2, Ventilator) & holds
-│   │   │   ├── Login.jsx               # One-click demo credentials login page
-│   │   │   ├── PatientDashboard.jsx    # Patient holds & active blood request viewer
-│   │   │   ├── Register.jsx            # Multi-role registration with GPS detection
-│   │   │   ├── SearchBloodBanks.jsx    # All-India blood bank search with live stock & filters
-│   │   │   └── SearchHospitals.jsx     # Hospital discovery with responsive cards & directions
+│   │   │   ├── AboutUs.jsx                 # About Us page with mission & developer credits
+│   │   │   ├── AdminDashboard.jsx          # Admin metrics & facility verification toggles
+│   │   │   ├── BloodBankDashboard.jsx      # Inventory management for blood bank managers
+│   │   │   ├── BloodBankDetail.jsx         # Detail view with live blood group inventory
+│   │   │   ├── ContactUs.jsx               # Interactive Contact Us page with direct team info
+│   │   │   ├── CreateBloodRequest.jsx      # Blood request creator with compatibility preview
+│   │   │   ├── Home.jsx                    # Landing page with active emergencies & quick links
+│   │   │   ├── HospitalDashboard.jsx       # Resource manager for hospital administrators
+│   │   │   ├── HospitalDetail.jsx          # Hospital resources (ICU, Beds, O2, Ventilator) & holds
+│   │   │   ├── Login.jsx                   # One-click demo credentials login page
+│   │   │   ├── PatientDashboard.jsx        # Patient holds & active blood request viewer
+│   │   │   ├── Register.jsx                # Multi-role registration with GPS detection
+│   │   │   ├── SearchBloodBanks.jsx        # All-India blood bank search with live stock & filters
+│   │   │   └── SearchHospitals.jsx         # Hospital discovery with responsive cards & directions
 │   │   ├── services/
 │   │   │   └── api.js                  # Axios instance with auth token interceptor
 │   │   ├── App.jsx                     # Route definitions & application root
@@ -268,6 +272,7 @@ VitalLink/
 | **BloodBank** | `bloodbanks` | `name`, `email`, `phone`, `address`, `location`, `inventory` (`bloodGroup`, `unitsAvailable`), `verified`, `managedBy` | `location: '2dsphere'`, `inventory.bloodGroup: 1` |
 | **Reservation** | `reservations` | `patient`, `facilityId`, `facilityModel` (`Hospital`), `facilityName`, `resourceType`, `quantity`, `status` (`pending`, `confirmed`, `cancelled`, `completed`) | `patient: 1`, `facilityId: 1`, `status: 1` |
 | **BloodRequest** | `bloodrequests` | `patient`, `hospitalName`, `bloodGroup`, `urgency` (`normal`, `critical`), `unitsNeeded`, `status` (`active`, `fulfilled`, `cancelled`), `matchedBloodBanks` (`bloodBank`, `unitsAvailable`, `distanceKm`), `location` | `location: '2dsphere'`, `status: 1` |
+| **ContactMessage** | `contactmessages` | `name`, `email`, `phone`, `subject`, `message`, `status` (`unread`, `read`, `resolved`), `createdAtIST` | `email: 1`, `status: 1` |
 
 ---
 
@@ -305,6 +310,10 @@ VitalLink/
 - `GET /api/blood-requests` — Get emergency blood broadcasts (`Protected`).
 - `GET /api/blood-requests/active` — Get all active public emergency blood broadcasts.
 - `PUT /api/blood-requests/:id/status` — Update blood request status to fulfilled or cancelled (`Patient/Admin`).
+
+### Contact & Feedback (`/api/contact`)
+- `POST /api/contact` — Submit user feedback or project inquiry message (`Public`).
+- `GET /api/contact` — Get all submitted contact messages (`Admin`).
 
 ---
 
@@ -446,11 +455,11 @@ All pre-seeded demo accounts use the standard password: **`password123`**
 
 ## 👥 Contributors & Core Team
 
-| Name / GitHub | Role & Department | Core Ownership |
+| Name | Role & Contact Details | Core Ownership |
 |---|---|---|
-| **[Charudatta Patil](https://github.com/CharudattaPatil-AC)** | **Project Lead & Backend / Real-Time Systems Lead** | Server architecture, atomic concurrency engine, bed admission & restock workflow, and WebSocket rooms |
-| **Team Member 2** | **Data Engineering & Clinical Algorithms Lead** | Kaggle 2,439 blood banks dataset ingestion, MongoDB `2dsphere` spatial indexing, 4-tier WHO compatibility engine, and scarcity analytics |
-| **Team Member 3** | **Frontend Architecture & GIS / Document Lead** | React 18 SPA, dual map engine (Leaflet + Google Maps), QR fast-track pass, client-side vector PDF generator, and donation drives |
+| **[Charudatta Patil](https://github.com/CharudattaPatil-AC)** | **Project Lead & Full-Stack Systems**<br>📞 `+91 7798615673`<br>✉️ `charudatta.patil.cmaug26@gmail.com` | Server architecture, atomic concurrency engine, bed admission & restock workflow, and WebSocket rooms |
+| **Divyashish Negi** | **Frontend Architecture & UI/UX Design**<br>📞 `+91 7357644803`<br>✉️ `divyashish.negi.cmaug26@gmail.com` | React 18 SPA, Bootstrap 5 UI/UX, About Us & Contact Us pages, and interactive client routing |
+| **Bhavesh Wagh** | **Database Engineering & Backend Integration**<br>📞 `+91 9373162282`<br>✉️ `bhavesh.wagh.cmaug26@gmail.com` | Normalized MongoDB schemas, Indian Standard Time (IST) support, facility directories, and contact messaging |
 
 ---
 
