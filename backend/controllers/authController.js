@@ -24,18 +24,15 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       phone,
-      role: role || 'patient'
+      role: role || 'patient',
+      bloodGroup
     };
 
-    if (role === 'donor') {
-      userData.bloodGroup = bloodGroup;
-      userData.dateOfBirth = dateOfBirth;
-      if (location && location.coordinates) {
-        userData.location = {
-          type: 'Point',
-          coordinates: location.coordinates
-        };
-      }
+    if (location && location.coordinates) {
+      userData.location = {
+        type: 'Point',
+        coordinates: location.coordinates
+      };
     }
 
     const user = await User.create(userData);

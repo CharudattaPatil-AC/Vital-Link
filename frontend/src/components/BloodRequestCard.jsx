@@ -1,8 +1,7 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
-const BloodRequestCard = ({ request, isDonorView, onRespond }) => {
-  const { user } = useAuth();
+const BloodRequestCard = ({ request, onCancel }) => {
   const {
     _id,
     bloodGroup,
@@ -13,13 +12,8 @@ const BloodRequestCard = ({ request, isDonorView, onRespond }) => {
     contactPhone,
     status,
     createdAt,
-    matchedDonors
+    matchedBloodBanks
   } = request;
-
-  // If in donor view, find this donor's specific match entry
-  const myMatch = isDonorView && matchedDonors
-    ? matchedDonors.find(m => (m.donor?._id || m.donor) === user?._id)
-    : null;
 
   const getUrgencyBadge = () => {
     switch (urgency) {
@@ -47,25 +41,30 @@ const BloodRequestCard = ({ request, isDonorView, onRespond }) => {
   };
 
   return (
-    <div className="card shadow-sm mb-3 border-0 border-start border-4 border-danger">
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <div className="card shadow-sm mb-4 border-0 border-start border-4 border-danger">
+      <div className="card-body p-4">
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            <span className="badge bg-danger fs-6">Patient Needs: {bloodGroup}</span>
+            <span className="badge bg-danger fs-6 px-3 py-2">Patient Needs: {bloodGroup}</span>
             {getUrgencyBadge()}
-            {myMatch && myMatch.matchLabel && (
-              <span className="badge bg-success-subtle text-success border border-success">
-                🎯 {myMatch.matchLabel}
-              </span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            {getStatusBadge()}
+            {status === 'active' && onCancel && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => onCancel(_id)}
+              >
+                Cancel Broadcast
+              </button>
             )}
           </div>
-          <div>{getStatusBadge()}</div>
         </div>
 
         {/* Compatible groups badge line */}
-        {compatibleGroups && compatibleGroups.length > 1 && !isDonorView && (
-          <div className="small text-muted mb-2">
-            <strong>Transfusion Compatible Donors: </strong>
+        {compatibleGroups && compatibleGroups.length > 0 && (
+          <div className="small text-muted mb-3">
+            <strong>Transfusion Compatible Groups: </strong>
             {compatibleGroups.map(bg => (
               <span key={bg} className="badge bg-light text-dark border me-1">
                 {bg}
@@ -74,64 +73,68 @@ const BloodRequestCard = ({ request, isDonorView, onRespond }) => {
           </div>
         )}
 
-        <div className="row my-3 g-2">
-          <div className="col-sm-6">
+        <div className="row g-2 mb-3 bg-light p-3 rounded">
+          <div className="col-sm-6 col-md-3">
             <span className="text-muted small d-block">Units Needed:</span>
-            <span className="fw-bold fs-5">{unitsNeeded} Units</span>
+            <span className="fw-bold fs-5 text-danger">{unitsNeeded} Units</span>
           </div>
-          <div className="col-sm-6">
+          <div className="col-sm-6 col-md-3">
             <span className="text-muted small d-block">Hospital / Ward:</span>
             <span className="fw-semibold">{hospitalName || 'Not specified'}</span>
           </div>
-          <div className="col-sm-6">
+          <div className="col-sm-6 col-md-3">
             <span className="text-muted small d-block">Emergency Contact:</span>
             <span className="fw-semibold text-danger">📞 {contactPhone}</span>
           </div>
-          <div className="col-sm-6">
+          <div className="col-sm-6 col-md-3">
             <span className="text-muted small d-block">Broadcast Time:</span>
-            <span className="text-muted">{new Date(createdAt).toLocaleString()}</span>
+            <span className="text-muted small">{new Date(createdAt).toLocaleString()}</span>
           </div>
         </div>
 
-        {matchedDonors && matchedDonors.length > 0 && !isDonorView && (
-          <div className="mt-2 p-2 bg-light rounded small">
-            <strong>Donors Dispatched ({matchedDonors.length}): </strong>
-            <span className="text-muted">
-              {matchedDonors.filter(d => d.status === 'accepted').length} Accepted,{' '}
-              {matchedDonors.filter(d => d.status === 'declined').length} Declined,{' '}
-              {matchedDonors.filter(d => d.status === 'pending').length} Pending
-            </span>
-          </div>
-        )}
-
-        {isDonorView && status === 'active' && onRespond && (
-          <div>
-            {myMatch?.status === 'accepted' ? (
-              <div className="alert alert-success py-2 mb-0 mt-3 small fw-bold">
-                ✓ You accepted this donation request. Please proceed to {hospitalName || 'the emergency center'} or call 📞 {contactPhone}.
-              </div>
-            ) : myMatch?.status === 'declined' ? (
-              <div className="alert alert-secondary py-2 mb-0 mt-3 small text-muted">
-                You declined this donation request.
-              </div>
-            ) : (
-              <div className="d-flex gap-2 mt-3 pt-2 border-top">
-                <button
-                  className="btn btn-success btn-sm flex-grow-1 fw-bold"
-                  onClick={() => onRespond(_id, 'accepted')}
-                >
-                  ✓ Accept & Help Patient
-                </button>
-                <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => onRespond(_id, 'declined')}
-                >
-                  Decline
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Matched Blood Banks */}
+        <div className="mt-3">
+          <h6 className="fw-bold text-dark d-flex align-items-center justify-content-between">
+            <span>🏥 Matched Blood Banks with Compatible Stock ({matchedBloodBanks?.length || 0}):</span>
+          </h6>
+          {matchedBloodBanks && matchedBloodBanks.length > 0 ? (
+            <div className="row g-2 mt-1">
+              {matchedBloodBanks.map((bank, idx) => (
+                <div key={idx} className="col-md-6">
+                  <div className="border rounded p-3 bg-white h-100 shadow-sm">
+                    <div className="d-flex justify-content-between align-items-start mb-1">
+                      <h6 className="fw-bold mb-0 text-truncate" style={{ maxWidth: '70%' }}>
+                        {bank.name}
+                      </h6>
+                      <span className={`badge ${bank.matchTier === 1 ? 'bg-success' : 'bg-primary'}`}>
+                        {bank.matchLabel}
+                      </span>
+                    </div>
+                    <div className="small text-muted mb-1 text-truncate">{bank.address}</div>
+                    <div className="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                      <div>
+                        <span className="badge bg-danger me-2">
+                          {bank.unitsAvailable} Units Available
+                        </span>
+                        {bank.distanceKm !== undefined && (
+                          <span className="small text-muted">📍 ~{bank.distanceKm} km</span>
+                        )}
+                      </div>
+                      <Link
+                        to={`/bloodbanks/${bank.bloodBank?._id || bank.bloodBank}`}
+                        className="btn btn-sm btn-outline-danger"
+                      >
+                        View Stock &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="small text-muted mb-0">No blood banks within selected radius currently report this blood group.</p>
+          )}
+        </div>
       </div>
     </div>
   );

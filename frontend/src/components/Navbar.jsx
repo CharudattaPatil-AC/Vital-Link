@@ -18,8 +18,6 @@ const Navbar = () => {
         return '/dashboard/hospital';
       case 'bloodbank':
         return '/dashboard/bloodbank';
-      case 'donor':
-        return '/dashboard/donor';
       case 'admin':
         return '/dashboard/admin';
       case 'patient':

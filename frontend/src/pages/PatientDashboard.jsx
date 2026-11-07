@@ -31,20 +31,16 @@ const PatientDashboard = () => {
     fetchData();
   }, []);
 
-  // Socket for donor response alerts
-  useEffect(() => {
-    if (!socket) return;
-    const handleDonorRes = (data) => {
-      setStatusMsg({
-        text: `A voluntary donor has responded '${data.status}' to your blood request!`,
-        type: data.status === 'accepted' ? 'success' : 'info'
-      });
+  const handleCancelRequest = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this emergency blood request?')) return;
+    try {
+      await API.put(`/blood-requests/${id}/status`, { status: 'cancelled' });
+      setStatusMsg({ text: 'Blood request broadcast marked as cancelled.', type: 'info' });
       fetchData();
-    };
-
-    socket.on('donorResponse', handleDonorRes);
-    return () => socket.off('donorResponse', handleDonorRes);
-  }, [socket]);
+    } catch (err) {
+      setStatusMsg({ text: 'Error cancelling blood request', type: 'danger' });
+    }
+  };
 
   const handleCancelReservation = async (id) => {
     if (!window.confirm('Are you sure you want to cancel this emergency reservation?')) return;
@@ -98,7 +94,7 @@ const PatientDashboard = () => {
         <div className="col-md-4">
           <Link to="/blood-request/create" className="btn btn-danger w-100 py-3 shadow-sm text-start">
             <div className="fw-bold fs-5 text-white">🚨 Emergency Blood Request</div>
-            <div className="small text-white-50">Smart compatibility broadcast to nearby donors</div>
+            <div className="small text-white-50">Smart compatibility broadcast to verified blood banks</div>
           </Link>
         </div>
       </div>
@@ -184,7 +180,7 @@ const PatientDashboard = () => {
       {bloodRequests.length > 0 ? (
         <div>
           {bloodRequests.map((req) => (
-            <BloodRequestCard key={req._id} request={req} isDonorView={false} />
+            <BloodRequestCard key={req._id} request={req} onCancel={handleCancelRequest} />
           ))}
         </div>
       ) : (

@@ -26,9 +26,6 @@ const Login = () => {
         case 'bloodbank':
           navigate('/dashboard/bloodbank');
           break;
-        case 'donor':
-          navigate('/dashboard/donor');
-          break;
         case 'admin':
           navigate('/dashboard/admin');
           break;
@@ -57,7 +54,7 @@ const Login = () => {
               <div className="text-center mb-4">
                 <span className="fs-1">🏥</span>
                 <h3 className="fw-bold mt-2">Sign In to LifeLink</h3>
-                <p className="text-muted small">Access facility management, donor portal, or emergency requests</p>
+                <p className="text-muted small">Access facility management or patient emergency portal</p>
               </div>
 
               {error && <div className="alert alert-danger py-2 small">{error}</div>}
@@ -127,13 +124,6 @@ const Login = () => {
                     onClick={() => { setEmail('bloodbank@city.org'); setPassword('password123'); }}
                   >
                     Blood Bank: bloodbank@city.org
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-success btn-sm py-0 px-2"
-                    onClick={() => { setEmail('rahul.donor@example.com'); setPassword('password123'); }}
-                  >
-                    Donor: rahul.donor@example.com
                   </button>
                   <button
                     type="button"

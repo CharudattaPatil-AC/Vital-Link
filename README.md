@@ -6,7 +6,7 @@
 [![Geospatial](https://img.shields.io/badge/Spatial-MongoDB%202dsphere-blue.svg)](https://www.mongodb.com/docs/manual/core/indexes/index-types/index-geospatial/)
 [![Documentation Sync](https://img.shields.io/badge/Docs-Automated%20Sync%20Verified-success.svg)](#-documentation-synchronization)
 
-LifeLink is a centralized, real-time emergency healthcare resource coordination and rare blood matching platform designed to solve the critical "Golden Hour" bottleneck during medical emergencies. It provides instant visibility into life-saving resources (ICU beds, oxygen cylinders, ventilators, and blood units) across India, connecting patients, hospitals, certified blood banks, and voluntary donors in real time.
+LifeLink is a centralized, real-time emergency healthcare resource coordination and rare blood matching platform designed to solve the critical "Golden Hour" bottleneck during medical emergencies. It provides instant visibility into life-saving resources (ICU beds, oxygen cylinders, ventilators, and blood units) across India, connecting patients, hospitals, and certified blood banks in real time.
 
 ---
 
@@ -36,7 +36,7 @@ flowchart TD
         UI_Home["Landing & Alert Portal"]
         UI_Search["Geospatial Discovery (Hospitals & Blood Banks)"]
         UI_Map["Interactive OpenStreetMap & Leaflet View"]
-        UI_Dashboards["Role Dashboards (Patient / Hospital / BloodBank / Donor / Admin)"]
+        UI_Dashboards["Role Dashboards (Patient / Hospital / BloodBank / Admin)"]
     end
 
     subgraph APILayer["⚙️ Backend Application Server (Node.js + Express.js)"]
@@ -126,28 +126,19 @@ flowchart TD
 
     Matrix --> Tier1["Tier 1: Exact Match\n(Identical: B+)"]
     Matrix --> Tier2["Tier 2: Compatible Same Group / Rh- Sibling\n(Compatible: B-)"]
-    Matrix --> Tier3["Tier 3: Universal Rh+ Donor\n(Compatible: O+)"]
+    Matrix --> Tier3["Tier 3: Universal Rh+\n(Compatible: O+)"]
     Matrix --> Tier4["Tier 4: Universal Lifesaver Reserve\n(Protected Emergency Reserve: O-)"]
 
-    Tier1 --> ColdStorageCheck["Check 2,439 Blood Banks Cold Storage"]
-    Tier2 --> ColdStorageCheck
-    Tier3 --> ColdStorageCheck
-    Tier4 --> ColdStorageCheck
+    Tier1 --> BankQuery["Spatial Inventory Query (MongoDB 2dsphere Across 2,439 Blood Banks)"]
+    Tier2 --> BankQuery
+    Tier3 --> BankQuery
+    Tier4 --> BankQuery
 
-    ColdStorageCheck -->|"Units Found"| ReserveUnits["Instant 60-Minute Cold Storage Reservation"]
-    ColdStorageCheck -->|"Insufficient Units"| DonorQuery["Simultaneous Spatial Donor Dispatch (MongoDB 2dsphere)"]
+    BankQuery --> MatchCheck{"Compatible Stock Available in Radius?"}
+    MatchCheck -->|"Yes"| MatchedList["Matched Blood Banks Ranked by Distance & Compatibility Tier"]
+    MatchCheck -->|"Expand Radius"| ExpandSearch["Auto-Expand Search Radius to 25km+"]
 
-    DonorQuery --> FilterGuards{"Medical Safety Guards"}
-    FilterGuards -->|"Age: 18 - 65"| CheckCooldown{"90-Day Donation Cooldown"}
-    FilterGuards -->|"Ineligible"| ExcludeDonor["Excluded"]
-    CheckCooldown -->|"Passed (> 90 days)"| ActiveStatus{"Is Available?"}
-    CheckCooldown -->|"Failed (< 90 days)"| ExcludeDonor
-    ActiveStatus -->|"Yes"| SocketPush["⚡ Real-Time Socket.IO Alert Push to Donor Devices"]
-    ActiveStatus -->|"No"| ExcludeDonor
-
-    SocketPush --> DonorDecision{"Donor Response"}
-    DonorDecision -->|"Accepts"| NotifyHosp["Hospital & Patient Notified with Donor Contact"]
-    DonorDecision -->|"Declines / Timeout"| CascadeNext["Cascade Dispatch to Next Proximity Radius Tier"]
+    MatchedList --> PatientView["Live Stock Details, Direct Facility Contact & GPS Navigation Provided to Patient"]
 ```
 
 ---
@@ -163,13 +154,12 @@ flowchart TD
 
 ### 2. 🧠 Smart Universal Blood Compatibility Engine
 - **Medical Transfusion Rules:** Encodes WHO / Red Cross compatibility matrices (e.g., `B+` patients safely receive `B+`, `B-`, `O+`, and `O-`).
-- **4-Tier Prioritized Cascading Dispatch:**
+- **4-Tier Prioritized Cascading Matching:**
   - **Tier 1:** Exact Match (identical blood group)
   - **Tier 2:** Compatible Same Group / Rh- Sibling
-  - **Tier 3:** Universal Rh+ Donor (`O+`)
+  - **Tier 3:** Universal Rh+ (`O+`)
   - **Tier 4:** Universal Lifesaver Reserve (`O-` protected reserve)
-- **Medical Safety Guards:** Enforces the mandatory **90-day cooldown interval** between whole blood donations and verifies donor age (18–65).
-- **Cross-Inventory Hybrid Checking:** Simultaneously queries certified blood banks for existing compatible cold storage units and pre-alerts nearby voluntary donors.
+- **Cross-Inventory Blood Bank Matching:** Queries verified blood banks for existing compatible cold storage units within patient radius and displays real-time unit counts, contact details, and directions.
 
 ### 3. 🗺️ Interactive OpenStreetMap & Leaflet Engine
 - **Free & Open-Source Geospatial Visualization:** Powered by Leaflet and OpenStreetMap tiles without requiring third-party API keys or incurring billing quota limits.
@@ -203,9 +193,8 @@ VitalLink/
 ├── backend/
 │   ├── controllers/
 │   │   ├── authController.js           # Registration, login, profile & JWT issuance
-│   │   ├── bloodBankController.js      # Blood bank search, inventory & scarcity analytics
-│   │   ├── bloodRequestController.js   # Emergency compatibility broadcasts & responses
-│   │   ├── donorController.js          # Donor availability, proximity & GPS updates
+│   │   ├── bloodBankController.js      # Blood bank search & inventory management
+│   │   ├── bloodRequestController.js   # Emergency compatibility blood bank matching
 │   │   ├── hospitalController.js       # Hospital resource tracking & admin verify
 │   │   └── reservationController.js    # Atomic holds & 60-min auto-restock daemon
 │   ├── data/
@@ -217,15 +206,14 @@ VitalLink/
 │   │   └── roleCheck.js                # Role-based access control (RBAC)
 │   ├── models/
 │   │   ├── BloodBank.js                # Blood bank model with 2dsphere index
-│   │   ├── BloodRequest.js             # Blood broadcast model with matched tiers
+│   │   ├── BloodRequest.js             # Blood broadcast model with matched blood banks
 │   │   ├── Hospital.js                 # Hospital resources (ICU, O2, beds, ventilators)
 │   │   ├── Reservation.js              # Atomic reservation holds with expiration
-│   │   └── User.js                     # Multi-role user accounts & donor data
+│   │   └── User.js                     # Multi-role user accounts (patient, facility, admin)
 │   ├── routes/
 │   │   ├── auth.js                     # /api/auth routes
-│   │   ├── bloodBanks.js               # /api/bloodbanks routes (includes /analytics/scarcity)
+│   │   ├── bloodBanks.js               # /api/bloodbanks routes
 │   │   ├── bloodRequests.js            # /api/blood-requests routes
-│   │   ├── donors.js                   # /api/donors routes
 │   │   ├── hospitals.js                # /api/hospitals routes
 │   │   └── reservations.js             # /api/reservations routes
 │   ├── scripts/
@@ -234,10 +222,10 @@ VitalLink/
 │   ├── socket/
 │   │   └── index.js                    # Socket.IO connection handling & rooms
 │   ├── utils/
-│   │   └── bloodCompatibility.js       # Transfusion matrix, tiers & cooldown guards
+│   │   └── bloodCompatibility.js       # Transfusion matrix & compatibility tiers
 │   ├── .env                            # Backend configuration (PORT, MONGO_URI, JWT_SECRET)
 │   ├── package.json                    # Backend dependencies & npm scripts
-│   ├── seed.js                         # Database seeder (2,439 blood banks, camps, users)
+│   ├── seed.js                         # Database seeder (2,439 blood banks, hospitals, users)
 │   └── server.js                       # Express application bootstrap & WebSocket server
 │
 ├── frontend/
@@ -245,26 +233,25 @@ VitalLink/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── BloodBankCard.jsx       # Blood bank card with stock badges & navigation
-│   │   │   ├── BloodRequestCard.jsx    # Alert card for emergency blood requests
+│   │   │   ├── BloodRequestCard.jsx    # Alert card for emergency blood requests with matched banks
 │   │   │   ├── HospitalCard.jsx        # Hospital card with resource gauges & directions
 │   │   │   ├── InteractiveMap.jsx      # Leaflet OpenStreetMap view with custom pins
 │   │   │   ├── Navbar.jsx              # Responsive navigation header with role badge
 │   │   │   ├── PrivateRoute.jsx        # Role-based route guard
-│   │   │   └── ReservationModal.jsx    # Modal dialog for booking beds, oxygen & blood
+│   │   │   └── ReservationModal.jsx    # Modal dialog for booking beds, ICU & oxygen
 │   │   ├── context/
 │   │   │   ├── AuthContext.jsx         # User auth context backed by sessionStorage
 │   │   │   └── SocketContext.jsx       # Global Socket.IO client connection context
 │   │   ├── pages/
 │   │   │   ├── AdminDashboard.jsx      # Admin metrics & facility verification toggles
 │   │   │   ├── BloodBankDashboard.jsx  # Inventory management for blood bank managers
-│   │   │   ├── BloodBankDetail.jsx     # Detail view with blood unit reserve matrix
+│   │   │   ├── BloodBankDetail.jsx     # Detail view with live blood group inventory
 │   │   │   ├── CreateBloodRequest.jsx  # Blood request creator with compatibility preview
-│   │   │   ├── DonorDashboard.jsx      # Donor portal with availability & cooldown guards
 │   │   │   ├── Home.jsx                # Landing page with active emergencies & quick links
 │   │   │   ├── HospitalDashboard.jsx   # Resource manager for hospital administrators
 │   │   │   ├── HospitalDetail.jsx      # Hospital resources (ICU, Beds, O2, Ventilator) & holds
 │   │   │   ├── Login.jsx               # One-click demo credentials login page
-│   │   │   ├── PatientDashboard.jsx    # Patient holds, active requests & QR pass viewer
+│   │   │   ├── PatientDashboard.jsx    # Patient holds & active blood request viewer
 │   │   │   ├── Register.jsx            # Multi-role registration with GPS detection
 │   │   │   ├── SearchBloodBanks.jsx    # All-India blood bank search with city jump & map
 │   │   │   └── SearchHospitals.jsx     # Hospital discovery with Card and Map views
@@ -272,7 +259,7 @@ VitalLink/
 │   │   │   └── api.js                  # Axios instance with auth token interceptor
 │   │   ├── App.jsx                     # Route definitions & application root
 │   │   └── main.jsx                    # Vite application entry point
-│   ├── package.json                    # Frontend dependencies (React, Vite, Bootstrap, jsPDF)
+│   ├── package.json                    # Frontend dependencies (React, Vite, Bootstrap)
 │   └── vite.config.js                  # Vite build & development server configuration
 │
 ├── package.json                        # Root workspace manager (concurrent scripts)
@@ -285,11 +272,11 @@ VitalLink/
 
 | Model | Collection | Primary Attributes | Key Indexes |
 |---|---|---|---|
-| **User** | `users` | `name`, `email`, `password`, `phone`, `role` (`patient`, `donor`, `hospital`, `bloodbank`, `admin`), `bloodGroup`, `isAvailable`, `lastDonationDate`, `location` | `email: 1`, `location: '2dsphere'` |
+| **User** | `users` | `name`, `email`, `password`, `phone`, `role` (`patient`, `hospital`, `bloodbank`, `admin`), `bloodGroup`, `location` | `email: 1`, `location: '2dsphere'` |
 | **Hospital** | `hospitals` | `name`, `email`, `phone`, `address`, `location`, `resources` (`icuBeds`, `generalBeds`, `oxygenCylinders`, `ventilators`), `verified`, `managedBy` | `location: '2dsphere'`, `verified: 1` |
 | **BloodBank** | `bloodbanks` | `name`, `email`, `phone`, `address`, `location`, `inventory` (`bloodGroup`, `unitsAvailable`), `verified`, `managedBy` | `location: '2dsphere'`, `inventory.bloodGroup: 1` |
-| **Reservation** | `reservations` | `patient`, `facilityId`, `facilityModel` (`Hospital`/`BloodBank`), `facilityName`, `resourceType`, `bloodGroup`, `quantity`, `status` (`active`, `confirmed`, `cancelled`, `expired`), `expiresAt` (60 min) | `patient: 1`, `facilityId: 1`, `status: 1`, `expiresAt: 1` |
-| **BloodRequest** | `bloodrequests` | `patient`, `hospitalName`, `bloodGroup`, `urgency` (`normal`, `critical`), `unitsRequired`, `status` (`pending`, `fulfilled`, `cancelled`), `matchedDonors` (`donor`, `tier`, `status`), `location` | `location: '2dsphere'`, `status: 1` |
+| **Reservation** | `reservations` | `patient`, `facilityId`, `facilityModel` (`Hospital`), `facilityName`, `resourceType`, `quantity`, `status` (`active`, `confirmed`, `cancelled`, `expired`), `expiresAt` (60 min) | `patient: 1`, `facilityId: 1`, `status: 1`, `expiresAt: 1` |
+| **BloodRequest** | `bloodrequests` | `patient`, `hospitalName`, `bloodGroup`, `urgency` (`normal`, `critical`), `unitsNeeded`, `status` (`active`, `fulfilled`, `cancelled`), `matchedBloodBanks` (`bloodBank`, `unitsAvailable`, `distanceKm`), `location` | `location: '2dsphere'`, `status: 1` |
 
 ---
 
@@ -316,23 +303,18 @@ VitalLink/
 - `PUT /api/bloodbanks/:id/inventory` — Update units available per blood group (`BloodBank/Admin`).
 - `PUT /api/bloodbanks/:id/verify` — Toggle verified blood bank status (`Admin Only`).
 
-### Donors (`/api/donors`)
-- `GET /api/donors/nearby` — Find nearby available voluntary donors (`?lat=&lng=&bloodGroup=&radius=`).
-- `PUT /api/donors/availability` — Toggle donor ready-to-donate availability status (`Donor Only`).
-- `PUT /api/donors/location` — Update donor live GPS coordinates (`Donor Only`).
-
 ### Reservations (`/api/reservations`)
-- `POST /api/reservations` — Create atomic resource reservation with 60-minute holding timer (`Patient`).
+- `POST /api/reservations` — Create atomic hospital bed reservation with 60-minute holding timer (`Patient`).
 - `GET /api/reservations/my` — List all reservations made by the logged-in patient (`Patient`).
-- `GET /api/reservations/facility` — List reservations incoming to a hospital or blood bank (`Facility Admin`).
+- `GET /api/reservations/facility` — List reservations incoming to a hospital (`Facility Admin`).
 - `PUT /api/reservations/:id/confirm` — Mark reservation admitted upon patient arrival (`Facility Admin`).
 - `PUT /api/reservations/:id/cancel` — Cancel hold and immediately release inventory back to facility.
 
 ### Emergency Blood Requests (`/api/blood-requests`)
-- `POST /api/blood-requests` — Broadcast emergency blood need with 4-tier compatibility matching (`Patient`).
-- `GET /api/blood-requests` — Get active broadcasts matching current donor profile (`Protected`).
-- `GET /api/blood-requests/:id` — Get blood request status and donor responses (`Protected`).
-- `PUT /api/blood-requests/:id/respond` — Accept or decline an emergency blood request (`Donor Only`).
+- `POST /api/blood-requests` — Broadcast emergency blood need and match nearby verified blood banks holding compatible units (`Patient`).
+- `GET /api/blood-requests` — Get emergency blood broadcasts (`Protected`).
+- `GET /api/blood-requests/active` — Get all active public emergency blood broadcasts.
+- `PUT /api/blood-requests/:id/status` — Update blood request status to fulfilled or cancelled (`Patient/Admin`).
 
 ---
 
@@ -342,8 +324,7 @@ LifeLink uses Socket.IO to provide instant peer-to-peer and broadcast emergency 
 
 | Event Name | Direction | Payload | Description |
 |---|---|---|---|
-| `bloodRequest` | Server $\to$ Matching Donors | `{ requestId, patientName, hospitalName, bloodGroup, urgency, location }` | Emitted when an emergency blood broadcast is posted; sent to nearby compatible donors. |
-| `donorResponse` | Server $\to$ Requesting Patient | `{ requestId, donorId, donorName, decision: 'accepted'/'declined' }` | Notifies the patient and triage staff when a voluntary donor accepts an emergency request. |
+| `newBloodRequest` | Server $\to$ All Clients | `{ bloodRequest }` | Emitted when an emergency blood broadcast is posted; informs network of urgent blood requirements. |
 | `inventoryUpdate` | Server $\to$ All Connected Clients | `{ type: 'hospital'/'bloodbank', facilityId, inventory/resources }` | Real-time broadcast whenever bed or blood stock changes or an expired hold auto-restocks. |
 | `reservationCreated` | Server $\to$ Facility Room | `{ reservationId, facilityId, resourceType, quantity, patientName }` | Alerts hospital triage reception that a critical resource has been reserved. |
 | `reservationStatus` | Server $\to$ Patient Room | `{ reservationId, status: 'confirmed'/'cancelled'/'expired' }` | Updates the patient's dashboard in real time when triage marks them admitted or hold expires. |
@@ -357,8 +338,7 @@ LifeLink uses Socket.IO to provide instant peer-to-peer and broadcast emergency 
 | **Frontend Framework** | React 18, Vite | High-performance SPA with fast HMR |
 | **Routing & Navigation** | React Router v7 | Nested, role-guarded client routing |
 | **UI Components** | Bootstrap 5, React-Bootstrap | Clean, accessible, standardized design |
-| **Mapping Engines** | Leaflet, OpenStreetMap, Google Maps JS API | Dual mapping engine with turn-by-turn driving navigation |
-| **Documents & Passes** | jsPDF, QRCode.react | Client-side vector PDF passes & Appreciation Certificates |
+| **Mapping Engine** | Leaflet, OpenStreetMap | 100% Free geospatial map with interactive popups and routing |
 | **Backend Runtime** | Node.js, Express.js | Asynchronous RESTful service tier |
 | **Real-Time Layer** | Socket.IO Client & Server | Sub-second emergency broadcasts & inventory synchronization |
 | **Database & GIS** | MongoDB, Mongoose ODM | Document store with native `2dsphere` geospatial indexing |
@@ -466,13 +446,11 @@ All pre-seeded demo accounts use the standard password: **`password123`**
 |---|---|---|---|
 | **National Admin** | `admin@lifelink.org` | `password123` | System overview, verify/revoke facilities |
 | **Hospital Admin** | `hospital@apollo.com` | `password123` | Live ICU beds, oxygen, and ventilator stock management; admit incoming patients |
-| **Blood Bank Admin** | `bloodbank@city.org` | `password123` | Manage units for all 8 blood groups; stock replenishment monitoring |
-| **Voluntary Donor (O+)** | `rahul.donor@example.com` | `password123` | Toggle donation availability, receive proximity alerts, accept emergency requests |
-| **Universal Donor (O-)** | `vikram.donor@example.com` | `password123` | Protected universal lifesaver tier; emergency compatibility alerts |
-| **Patient / Attendant** | `patient@example.com` | `password123` | Discover facilities, reserve beds/blood, broadcast emergency blood requests |
+| **Blood Bank Admin** | `bloodbank@city.org` | `password123` | Manage units for all 8 blood groups; stock inventory monitoring |
+| **Patient / Attendant** | `patient@example.com` | `password123` | Discover facilities, reserve beds/ICU, broadcast emergency blood requests to blood banks |
 
 > [!TIP]
-> LifeLink uses `sessionStorage` for auth tokens. You can open multiple private/incognito windows or tabs to test simultaneous real-time interactions between a **Patient**, a **Hospital Admin**, and a **Donor** at the same time!
+> LifeLink uses `sessionStorage` for auth tokens. You can open multiple private/incognito windows or tabs to test simultaneous real-time interactions between a **Patient** and a **Hospital Admin** or **Blood Bank Admin** at the same time!
 
 ---
 

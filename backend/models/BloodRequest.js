@@ -36,17 +36,20 @@ const bloodRequestSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  matchedDonors: [{
-    donor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    donorBloodGroup: String,
-    matchTier: { type: Number, default: 1 }, // 1: Exact, 2: Compatible Rh-, 3: Universal Rh+, 4: Universal Reserve
+  matchedBloodBanks: [{
+    bloodBank: { type: mongoose.Schema.Types.ObjectId, ref: 'BloodBank' },
+    name: String,
+    address: String,
+    phone: String,
+    distanceKm: Number,
+    unitsAvailable: Number,
+    bloodGroup: String,
+    matchTier: { type: Number, default: 1 }, // 1: Exact, 2: Compatible
     matchLabel: String,
-    status: {
-      type: String,
-      enum: ['pending', 'accepted', 'declined'],
-      default: 'pending'
-    },
-    respondedAt: Date
+    availableStock: [{
+      bloodGroup: String,
+      unitsAvailable: Number
+    }]
   }],
   contactPhone: { type: String, required: true },
   hospitalName: String

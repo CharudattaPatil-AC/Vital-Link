@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   role: {
     type: String,
-    enum: ['admin', 'hospital', 'bloodbank', 'donor', 'patient'],
+    enum: ['admin', 'hospital', 'bloodbank', 'patient'],
     default: 'patient'
   },
   bloodGroup: {
@@ -18,8 +18,6 @@ const userSchema = new mongoose.Schema({
     type: { type: String, enum: ['Point'], default: 'Point' },
     coordinates: { type: [Number], default: [0, 0] }
   },
-  isAvailable: { type: Boolean, default: true },
-  lastDonationDate: Date,
   dateOfBirth: Date
 }, { timestamps: true });
 

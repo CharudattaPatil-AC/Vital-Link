@@ -13,7 +13,6 @@ import HospitalDetail from './pages/HospitalDetail';
 import BloodBankDetail from './pages/BloodBankDetail';
 import HospitalDashboard from './pages/HospitalDashboard';
 import BloodBankDashboard from './pages/BloodBankDashboard';
-import DonorDashboard from './pages/DonorDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import CreateBloodRequest from './pages/CreateBloodRequest';
 import AdminDashboard from './pages/AdminDashboard';
@@ -47,14 +46,6 @@ function App() {
               element={
                 <PrivateRoute roles={['bloodbank']}>
                   <BloodBankDashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/dashboard/donor"
-              element={
-                <PrivateRoute roles={['donor']}>
-                  <DonorDashboard />
                 </PrivateRoute>
               }
             />

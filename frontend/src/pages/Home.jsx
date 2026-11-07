@@ -27,7 +27,7 @@ const Home = () => {
             LifeLink – Emergency Healthcare Resource Network
           </h1>
           <p className="lead text-muted mx-auto" style={{ maxWidth: '750px' }}>
-            Real-time tracking of ICU beds, oxygen cylinders, blood bank inventories, and an automated proximity-based emergency donor matching system.
+            Real-time tracking of ICU beds, oxygen cylinders, ventilators, blood bank inventories, and smart emergency blood compatibility matching.
           </p>
           <div className="d-flex justify-content-center gap-3 mt-4">
             <Link to="/search/hospitals" className="btn btn-danger btn-lg px-4 fw-bold">
@@ -79,13 +79,13 @@ const Home = () => {
           <div className="col-md-4">
             <div className="card h-100 p-3 shadow-sm border-0 bg-white">
               <div className="card-body">
-                <div className="fs-1 mb-2">🤝</div>
-                <h5 className="card-title fw-bold">Emergency Donor Network</h5>
+                <div className="fs-1 mb-2">🩸</div>
+                <h5 className="card-title fw-bold">Rare Blood Matching</h5>
                 <p className="card-text text-muted">
-                  Automated geo-proximity matching connects patients with registered voluntary blood donors within a 5 km radius.
+                  Smart compatibility engine maps patient emergency requests to nearby verified blood banks holding compatible units.
                 </p>
-                <Link to="/register" className="btn btn-sm btn-outline-danger">
-                  Register as Donor &rarr;
+                <Link to="/blood-request/create" className="btn btn-sm btn-outline-danger">
+                  Request Emergency Blood &rarr;
                 </Link>
               </div>
             </div>

@@ -78,7 +78,7 @@ exports.getReservations = async (req, res) => {
   try {
     let query = {};
 
-    if (req.user.role === 'patient' || req.user.role === 'donor') {
+    if (req.user.role === 'patient') {
       query.patient = req.user._id;
     } else if (req.user.role === 'hospital') {
       const hospital = await Hospital.findOne({ managedBy: req.user._id });

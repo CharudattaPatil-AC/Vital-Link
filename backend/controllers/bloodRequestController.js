@@ -1,20 +1,15 @@
 const BloodRequest = require('../models/BloodRequest');
-const User = require('../models/User');
 const BloodBank = require('../models/BloodBank');
-const {
-  COMPATIBILITY_MATRIX,
-  getTierForDonor,
-  checkDonorEligibility
-} = require('../utils/bloodCompatibility');
+const { COMPATIBILITY_MATRIX } = require('../utils/bloodCompatibility');
 
-// POST /api/blood-requests - Create emergency blood request with Smart Compatibility Engine
+// POST /api/blood-requests - Create emergency blood request with Smart Blood Bank Inventory Matching
 exports.createBloodRequest = async (req, res) => {
   try {
     const { bloodGroup, unitsNeeded, urgency, location, radius, contactPhone, hospitalName } = req.body;
 
     // 1. Determine compatible blood groups using transfusion matrix
     const compatibleGroups = COMPATIBILITY_MATRIX[bloodGroup] || [bloodGroup];
-    const searchRadius = parseInt(radius, 10) || 5000;
+    const searchRadius = parseInt(radius, 10) || 25000;
 
     const bloodRequest = await BloodRequest.create({
       patient: req.user._id,
@@ -32,61 +27,7 @@ exports.createBloodRequest = async (req, res) => {
       status: 'active'
     });
 
-    // 2. Query nearby potential donors with any compatible blood group
-    const candidateDonors = await User.find({
-      role: 'donor',
-      isAvailable: true,
-      bloodGroup: { $in: compatibleGroups },
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: location.coordinates
-          },
-          $maxDistance: searchRadius
-        }
-      }
-    }).select('-password');
-
-    // 3. Filter by Medical Safety (90-day cooldown, 18-65 age limit) and assign priority tiers
-    const eligibleDonors = [];
-    for (const donor of candidateDonors) {
-      const eligibility = checkDonorEligibility(donor);
-      if (eligibility.eligible) {
-        const { tier, label } = getTierForDonor(bloodGroup, donor.bloodGroup);
-        eligibleDonors.push({
-          donor,
-          tier,
-          label
-        });
-      }
-    }
-
-    // Sort by Tier (Tier 1 exact match first, then Tier 2, Tier 3, Tier 4)
-    eligibleDonors.sort((a, b) => a.tier - b.tier);
-
-    // Rare Blood Protection Logic:
-    // If urgency is NOT 'critical' and we already have Tier 1-3 donors, reserve O- donors for true O- patients
-    let finalMatchedDonors = eligibleDonors;
-    if (urgency !== 'critical') {
-      const nonTier4 = eligibleDonors.filter(d => d.tier < 4);
-      if (nonTier4.length > 0) {
-        finalMatchedDonors = nonTier4;
-      }
-    }
-
-    // Attach to blood request
-    bloodRequest.matchedDonors = finalMatchedDonors.map(item => ({
-      donor: item.donor._id,
-      donorBloodGroup: item.donor.bloodGroup,
-      matchTier: item.tier,
-      matchLabel: item.label,
-      status: 'pending'
-    }));
-    await bloodRequest.save();
-
-    // 4. Cross-Inventory Blood Bank Check:
-    // Check if nearby certified blood banks already have compatible units in stock
+    // 2. Query nearby verified blood banks holding compatible units
     const nearbyBloodBanks = await BloodBank.find({
       verified: true,
       location: {
@@ -95,7 +36,7 @@ exports.createBloodRequest = async (req, res) => {
             type: 'Point',
             coordinates: location.coordinates
           },
-          $maxDistance: Math.max(searchRadius, 10000) // check up to 10km for banks
+          $maxDistance: searchRadius
         }
       },
       'inventory': {
@@ -106,49 +47,62 @@ exports.createBloodRequest = async (req, res) => {
       }
     }).select('name phone address inventory location');
 
-    const compatibleBankStock = nearbyBloodBanks.map(bank => {
+    // 3. Map matched blood banks with distance, exact vs compatible tier, and units
+    const [pLng, pLat] = location.coordinates;
+    const matchedBloodBanks = nearbyBloodBanks.map(bank => {
+      const [bankLng, bankLat] = bank.location.coordinates;
+      const dLat = (bankLat - pLat) * (Math.PI / 180);
+      const dLng = (bankLng - pLng) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(pLat * (Math.PI / 180)) *
+          Math.cos(bankLat * (Math.PI / 180)) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distanceKm = Math.round(6371 * c * 10) / 10;
+
       const matchingItems = bank.inventory.filter(
         item => compatibleGroups.includes(item.bloodGroup) && item.unitsAvailable > 0
       );
+      const exactMatch = matchingItems.find(i => i.bloodGroup === bloodGroup);
+      const primaryGroup = exactMatch ? exactMatch.bloodGroup : matchingItems[0]?.bloodGroup;
+      const primaryUnits = exactMatch ? exactMatch.unitsAvailable : matchingItems[0]?.unitsAvailable;
+
       return {
-        bloodBankId: bank._id,
+        bloodBank: bank._id,
         name: bank.name,
-        phone: bank.phone,
         address: bank.address,
-        availableUnits: matchingItems
+        phone: bank.phone,
+        distanceKm,
+        unitsAvailable: primaryUnits || 0,
+        bloodGroup: primaryGroup || bloodGroup,
+        matchTier: exactMatch ? 1 : 2,
+        matchLabel: exactMatch ? `Exact Match (${bloodGroup})` : `Compatible Match (${primaryGroup})`,
+        availableStock: matchingItems.map(m => ({
+          bloodGroup: m.bloodGroup,
+          unitsAvailable: m.unitsAvailable
+        }))
       };
     });
 
-    // 5. Real-time Targeted Notifications via Socket.IO
+    // Sort by Match Tier (Exact match first), then distance
+    matchedBloodBanks.sort((a, b) => a.matchTier - b.matchTier || a.distanceKm - b.distanceKm);
+
+    bloodRequest.matchedBloodBanks = matchedBloodBanks;
+    await bloodRequest.save();
+
+    // 4. Real-time broadcast
     const io = req.app.get('io');
     if (io) {
-      finalMatchedDonors.forEach(item => {
-        io.to(`user_${item.donor._id}`).emit('bloodRequest', {
-          requestId: bloodRequest._id,
-          requestedBloodGroup: bloodGroup,
-          donorBloodGroup: item.donor.bloodGroup,
-          matchLabel: item.label,
-          matchTier: item.tier,
-          unitsNeeded,
-          urgency,
-          hospitalName,
-          contactPhone
-        });
-      });
       io.emit('newBloodRequest', { bloodRequest });
     }
 
     res.status(201).json({
       bloodRequest,
       compatibleGroups,
-      matchedDonorsCount: finalMatchedDonors.length,
-      tierBreakdown: {
-        tier1Exact: finalMatchedDonors.filter(d => d.tier === 1).length,
-        tier2Compatible: finalMatchedDonors.filter(d => d.tier === 2).length,
-        tier3UniversalPos: finalMatchedDonors.filter(d => d.tier === 3).length,
-        tier4UniversalReserve: finalMatchedDonors.filter(d => d.tier === 4).length
-      },
-      compatibleBankStock
+      matchedBanksCount: matchedBloodBanks.length,
+      matchedBloodBanks
     });
   } catch (error) {
     console.error('Create blood request error:', error);
@@ -160,70 +114,18 @@ exports.createBloodRequest = async (req, res) => {
 exports.getBloodRequests = async (req, res) => {
   try {
     let query = {};
-
-    if (req.user.role === 'donor') {
-      query['matchedDonors.donor'] = req.user._id;
-    } else if (req.user.role === 'patient') {
+    if (req.user.role === 'patient') {
       query.patient = req.user._id;
     }
-    // Admin can see all
 
     const requests = await BloodRequest.find(query)
       .populate('patient', 'name email phone')
-      .populate('matchedDonors.donor', 'name phone bloodGroup')
+      .populate('matchedBloodBanks.bloodBank', 'name phone address')
       .sort({ createdAt: -1 });
 
     res.json(requests);
   } catch (error) {
     res.status(500).json({ message: 'Server error fetching blood requests' });
-  }
-};
-
-// PUT /api/blood-requests/:id/respond - Donor responds
-exports.respondToRequest = async (req, res) => {
-  try {
-    const { status } = req.body; // 'accepted' or 'declined'
-    const requestId = req.params.id;
-    const donorId = req.user._id;
-
-    const bloodRequest = await BloodRequest.findById(requestId);
-    if (!bloodRequest) {
-      return res.status(404).json({ message: 'Blood request not found' });
-    }
-
-    const donorEntry = bloodRequest.matchedDonors.find(
-      d => d.donor.toString() === donorId.toString()
-    );
-
-    if (!donorEntry) {
-      return res.status(403).json({ message: 'You are not matched to this request' });
-    }
-
-    donorEntry.status = status;
-    donorEntry.respondedAt = new Date();
-    await bloodRequest.save();
-
-    // If accepted, update donor's lastDonationDate to now
-    if (status === 'accepted') {
-      await User.findByIdAndUpdate(donorId, { lastDonationDate: new Date() });
-    }
-
-    // Notify the patient
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${bloodRequest.patient}`).emit('donorResponse', {
-        requestId: bloodRequest._id,
-        donorId,
-        donorName: req.user.name,
-        donorPhone: req.user.phone,
-        status
-      });
-    }
-
-    res.json({ message: `Request ${status}`, bloodRequest });
-  } catch (error) {
-    console.error('Respond to blood request error:', error);
-    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -236,5 +138,27 @@ exports.getActiveRequests = async (req, res) => {
     res.json(requests);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// PUT /api/blood-requests/:id/status - Update blood request status (fulfilled / cancelled)
+exports.updateStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const request = await BloodRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: 'Blood request not found' });
+    }
+
+    if (request.patient.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update this request' });
+    }
+
+    request.status = status;
+    await request.save();
+
+    res.json({ message: `Request status updated to ${status}`, request });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error updating status' });
   }
 };

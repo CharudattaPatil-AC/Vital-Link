@@ -64,70 +64,14 @@ const seedData = async () => {
         email: 'patient@example.com',
         password: hashedPassword,
         phone: '+91 9876543215',
-        role: 'patient'
-      },
-      // Sample Voluntary Donors across India
-      {
-        name: 'Rahul Sharma (Delhi - Donor O+)',
-        email: 'rahul.donor@example.com',
-        password: hashedPassword,
-        phone: '+91 9876543220',
-        role: 'donor',
-        bloodGroup: 'O+',
-        isAvailable: true,
-        location: { type: 'Point', coordinates: [77.2090, 28.6139] },
-        dateOfBirth: new Date('1995-05-15')
-      },
-      {
-        name: 'Priya Patel (Mumbai - Donor B+)',
-        email: 'priya.donor@example.com',
-        password: hashedPassword,
-        phone: '+91 9876543221',
-        role: 'donor',
-        bloodGroup: 'B+',
-        isAvailable: true,
-        location: { type: 'Point', coordinates: [72.8427, 19.0000] },
-        dateOfBirth: new Date('1998-08-20')
-      },
-      {
-        name: 'Karthik Rao (Bengaluru - Donor A+)',
-        email: 'karthik.donor@example.com',
-        password: hashedPassword,
-        phone: '+91 9876543222',
-        role: 'donor',
-        bloodGroup: 'A+',
-        isAvailable: true,
-        location: { type: 'Point', coordinates: [77.5746, 12.9626] },
-        dateOfBirth: new Date('1992-11-10')
-      },
-      {
-        name: 'Sneha Sen (Kolkata - Donor AB- Rare)',
-        email: 'sneha.donor@example.com',
-        password: hashedPassword,
-        phone: '+91 9876543223',
-        role: 'donor',
-        bloodGroup: 'AB-',
-        isAvailable: true,
-        location: { type: 'Point', coordinates: [88.3626, 22.5735] },
-        dateOfBirth: new Date('1996-03-25')
-      },
-      {
-        name: 'Vikram Mehta (Universal Lifesaver O-)',
-        email: 'vikram.donor@example.com',
-        password: hashedPassword,
-        phone: '+91 9876543224',
-        role: 'donor',
-        bloodGroup: 'O-',
-        isAvailable: true,
-        location: { type: 'Point', coordinates: [77.2430, 28.5670] },
-        dateOfBirth: new Date('1990-01-30')
+        role: 'patient',
+        bloodGroup: 'B+'
       }
     ]);
 
     const adminUser = users.find(u => u.email === 'admin@lifelink.org');
     const apolloManager = users.find(u => u.email === 'hospital@apollo.com');
     const fortisManager = users.find(u => u.email === 'hospital@fortis.com');
-    const donorUser = users.find(u => u.email === 'rahul.donor@example.com');
     const bloodBankUser = users.find(u => u.email === 'bloodbank@city.org');
 
     // 2. Create Emergency Hospitals & Load All-India Hospital Registry
@@ -260,7 +204,6 @@ const seedData = async () => {
     console.log('Hospital:    hospital@apollo.com');
     console.log('Blood Bank:  bloodbank@city.org');
     console.log('Patient:     patient@example.com');
-    console.log('Donor (O+):  rahul.donor@example.com');
     console.log('======================================================\n');
 
     process.exit(0);

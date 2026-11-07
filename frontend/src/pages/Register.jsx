@@ -12,8 +12,7 @@ const Register = () => {
     password: '',
     phone: '',
     role: 'patient',
-    bloodGroup: 'O+',
-    dateOfBirth: '',
+    bloodGroup: 'O+'
   });
 
   const [location, setLocation] = useState({ lng: 77.2090, lat: 28.6139 });
@@ -52,11 +51,6 @@ const Register = () => {
 
     try {
       const payload = { ...formData };
-      if (formData.role === 'donor') {
-        payload.location = {
-          coordinates: [parseFloat(location.lng), parseFloat(location.lat)]
-        };
-      }
 
       const user = await register(payload);
 
@@ -66,9 +60,6 @@ const Register = () => {
           break;
         case 'bloodbank':
           navigate('/dashboard/bloodbank');
-          break;
-        case 'donor':
-          navigate('/dashboard/donor');
           break;
         case 'admin':
           navigate('/dashboard/admin');
@@ -94,7 +85,7 @@ const Register = () => {
               <div className="text-center mb-4">
                 <span className="fs-1">📝</span>
                 <h3 className="fw-bold mt-2">Create a LifeLink Account</h3>
-                <p className="text-muted small">Join the emergency healthcare network as a user, donor, or facility</p>
+                <p className="text-muted small">Join the emergency healthcare network as a patient or healthcare facility</p>
               </div>
 
               {error && <div className="alert alert-danger py-2 small">{error}</div>}
@@ -109,7 +100,6 @@ const Register = () => {
                     onChange={handleChange}
                   >
                     <option value="patient">Patient / Attendant (General User)</option>
-                    <option value="donor">Voluntary Blood Donor</option>
                     <option value="hospital">Hospital Administrator</option>
                     <option value="bloodbank">Blood Bank Administrator</option>
                   </select>
@@ -164,55 +154,6 @@ const Register = () => {
                     required
                   />
                 </div>
-
-                {/* Donor-specific fields */}
-                {formData.role === 'donor' && (
-                  <div className="p-3 bg-light rounded border border-danger-subtle mb-3">
-                    <h6 className="fw-bold text-danger mb-3">🩸 Blood Donor Information</h6>
-                    <div className="row g-2 mb-2">
-                      <div className="col-md-6">
-                        <label className="form-label small fw-semibold">Blood Group</label>
-                        <select
-                          className="form-select form-select-sm"
-                          name="bloodGroup"
-                          value={formData.bloodGroup}
-                          onChange={handleChange}
-                          required
-                        >
-                          <option value="A+">A+</option>
-                          <option value="A-">A-</option>
-                          <option value="B+">B+</option>
-                          <option value="B-">B-</option>
-                          <option value="AB+">AB+</option>
-                          <option value="AB-">AB-</option>
-                          <option value="O+">O+</option>
-                          <option value="O-">O-</option>
-                        </select>
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label small fw-semibold">Date of Birth</label>
-                        <input
-                          type="date"
-                          className="form-control form-control-sm"
-                          name="dateOfBirth"
-                          value={formData.dateOfBirth}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={handleGetLocation}
-                      >
-                        📍 Capture Current Location (for Proximity Alerts)
-                      </button>
-                      {locStatus && <div className="text-muted small mt-1">{locStatus}</div>}
-                    </div>
-                  </div>
-                )}
 
                 <button
                   type="submit"

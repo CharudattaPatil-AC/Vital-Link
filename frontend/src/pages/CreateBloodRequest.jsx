@@ -96,7 +96,7 @@ const CreateBloodRequest = () => {
                 <div>
                   <h3 className="fw-bold mb-0 text-danger">Smart Emergency Blood Broadcast</h3>
                   <p className="text-muted small mb-0">
-                    Powered by the Universal Blood Compatibility Engine with medical 90-day cooldown guards.
+                    Powered by the Universal Blood Transfusion Compatibility Engine across 2,439+ verified blood banks.
                   </p>
                 </div>
               </div>
@@ -108,58 +108,40 @@ const CreateBloodRequest = () => {
                   <div className="alert alert-success p-4 mb-4">
                     <h4 className="fw-bold text-success mb-2">✓ Broadcast Dispatched Successfully!</h4>
                     <p className="mb-2">
-                      Matched <strong>{successResult.matchedDonorsCount} eligible donor(s)</strong> within a{' '}
-                      {formData.radius / 1000} km radius based on transfusion compatibility for <strong>{formData.bloodGroup}</strong>.
+                      Matched <strong>{successResult.matchedBanksCount || 0} verified blood bank(s)</strong> within{' '}
+                      {formData.radius / 1000} km with compatible units on hand for <strong>{formData.bloodGroup}</strong>.
                     </p>
-
-                    {/* Tier Breakdown Badges */}
-                    {successResult.tierBreakdown && (
-                      <div className="p-3 bg-white rounded border my-3">
-                        <h6 className="fw-bold text-dark small text-uppercase mb-2">Priority Tier Dispatch Breakdown:</h6>
-                        <div className="d-flex flex-wrap gap-2">
-                          <span className="badge bg-danger p-2">
-                            Tier 1 (Exact {formData.bloodGroup}): {successResult.tierBreakdown.tier1Exact}
-                          </span>
-                          <span className="badge bg-primary p-2">
-                            Tier 2 (Compatible Group): {successResult.tierBreakdown.tier2Compatible}
-                          </span>
-                          <span className="badge bg-info text-dark p-2">
-                            Tier 3 (Universal Rh+): {successResult.tierBreakdown.tier3UniversalPos}
-                          </span>
-                          <span className="badge bg-dark p-2">
-                            Tier 4 (Universal Reserve O-): {successResult.tierBreakdown.tier4UniversalReserve}
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Nearby Certified Blood Banks with Compatible Stock */}
-                  {successResult.compatibleBankStock && successResult.compatibleBankStock.length > 0 && (
+                  {/* Matched Blood Banks */}
+                  {successResult.matchedBloodBanks && successResult.matchedBloodBanks.length > 0 && (
                     <div className="card border-0 shadow-sm mb-4 bg-light">
                       <div className="card-header bg-danger text-white py-2">
-                        <h6 className="fw-bold mb-0">🏥 Nearby Blood Banks with Compatible Stock on Hand:</h6>
+                        <h6 className="fw-bold mb-0">🏥 Matched Blood Banks with Compatible Stock:</h6>
                       </div>
                       <div className="card-body p-3">
-                        <p className="small text-muted mb-2">
-                          Certified blood banks within 10 km have compatible units available immediately in cold storage:
-                        </p>
                         <div className="list-group">
-                          {successResult.compatibleBankStock.map((bank) => (
-                            <div key={bank.bloodBankId} className="list-group-item d-flex justify-content-between align-items-center">
+                          {successResult.matchedBloodBanks.map((bank, idx) => (
+                            <div key={idx} className="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                               <div>
-                                <h6 className="fw-bold mb-1">{bank.name}</h6>
+                                <div className="d-flex align-items-center gap-2">
+                                  <h6 className="fw-bold mb-0">{bank.name}</h6>
+                                  <span className={`badge ${bank.matchTier === 1 ? 'bg-success' : 'bg-primary'}`}>
+                                    {bank.matchLabel}
+                                  </span>
+                                </div>
                                 <div className="small text-muted">{bank.address} | 📞 {bank.phone}</div>
-                                <div className="mt-1 d-flex gap-1 flex-wrap">
-                                  {bank.availableUnits.map((u) => (
-                                    <span key={u.bloodGroup} className="badge bg-danger">
-                                      {u.bloodGroup}: {u.unitsAvailable} Units
-                                    </span>
-                                  ))}
+                                <div className="mt-1 d-flex gap-2 align-items-center">
+                                  <span className="badge bg-danger">
+                                    {bank.unitsAvailable} Units Available
+                                  </span>
+                                  {bank.distanceKm !== undefined && (
+                                    <span className="small text-muted">📍 ~{bank.distanceKm} km away</span>
+                                  )}
                                 </div>
                               </div>
-                              <Link to={`/bloodbanks/${bank.bloodBankId}`} className="btn btn-sm btn-outline-danger">
-                                Hold Units
+                              <Link to={`/bloodbanks/${bank.bloodBank?._id || bank.bloodBank}`} className="btn btn-sm btn-outline-danger">
+                                View Stock &rarr;
                               </Link>
                             </div>
                           ))}

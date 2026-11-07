@@ -41,7 +41,6 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/hospitals', require('./routes/hospitals'));
 app.use('/api/bloodbanks', require('./routes/bloodBanks'));
-app.use('/api/donors', require('./routes/donors'));
 app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/blood-requests', require('./routes/bloodRequests'));
 
