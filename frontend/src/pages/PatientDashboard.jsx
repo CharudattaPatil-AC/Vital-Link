@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import API from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import BloodRequestCard from '../components/BloodRequestCard';
-import EmergencyQRPass from '../components/EmergencyQRPass';
 
 const PatientDashboard = () => {
   const socket = useSocket();
@@ -12,7 +11,6 @@ const PatientDashboard = () => {
   const [bloodRequests, setBloodRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
-  const [activePass, setActivePass] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -121,7 +119,7 @@ const PatientDashboard = () => {
                   <th>Quantity</th>
                   <th>Expires / Created</th>
                   <th>Status</th>
-                  <th className="text-end">Fast-Track Pass & Actions</th>
+                  <th className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,25 +155,14 @@ const PatientDashboard = () => {
                         </span>
                       </td>
                       <td className="text-end">
-                        <div className="btn-group btn-group-sm">
-                          {/* QR Pass View Button */}
+                        {res.status === 'pending' && (
                           <button
-                            type="button"
-                            className="btn btn-outline-dark"
-                            onClick={() => setActivePass(res)}
-                            title="View digital admission QR token"
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => handleCancelReservation(res._id)}
                           >
-                            🎫 QR Pass
+                            Cancel
                           </button>
-                          {res.status === 'pending' && (
-                            <button
-                              className="btn btn-outline-danger"
-                              onClick={() => handleCancelReservation(res._id)}
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -205,13 +192,6 @@ const PatientDashboard = () => {
           <p className="text-muted mb-0">No active emergency blood broadcasts posted yet.</p>
         </div>
       )}
-
-      {/* Emergency Fast-Track QR Pass Modal */}
-      <EmergencyQRPass
-        show={!!activePass}
-        reservation={activePass}
-        onClose={() => setActivePass(null)}
-      />
     </div>
   );
 };

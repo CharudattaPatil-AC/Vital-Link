@@ -13,7 +13,7 @@ LifeLink is a centralized, real-time emergency healthcare resource coordination 
 ## 📑 Table of Contents
 1. [System Architecture Flowchart](#-system-architecture-flowchart)
 2. [End-to-End Operational Flowcharts](#-end-to-end-operational-flowcharts)
-   - [A. Emergency Resource Reservation & Green Corridor Pass](#a-emergency-resource-reservation--green-corridor-pass-workflow)
+   - [A. Emergency Resource Reservation Workflow](#a-emergency-resource-reservation-workflow)
    - [B. Smart 4-Tier Universal Blood Compatibility Engine](#b-smart-4-tier-universal-blood-compatibility-engine)
    - [C. Voluntary Blood Donation Drives & Certification](#c-voluntary-blood-donation-drives--certification-workflow)
    - [D. India Blood Scarcity & Deficit Analytics](#d-india-blood-scarcity--deficit-analytics-workflow)
@@ -38,7 +38,6 @@ flowchart TD
         UI_Home["Landing & Alert Portal"]
         UI_Search["Geospatial Discovery (Hospitals & Blood Banks)"]
         UI_DualMap["Dual Map Switcher (Leaflet OSM & Google Maps)"]
-        UI_Pass["Fast-Track QR Pass & jsPDF Green Corridor Slip"]
         UI_Camps["Voluntary Donation Camps & Certificate Generator"]
         UI_Analytics["India Blood Scarcity & Deficit Dashboard"]
         UI_Dashboards["Role Dashboards (Patient / Hospital / BloodBank / Donor / Admin)"]
@@ -86,7 +85,7 @@ flowchart TD
 
 ## 🔄 End-to-End Operational Flowcharts
 
-### A. Emergency Resource Reservation & Green Corridor Pass Workflow
+### A. Emergency Resource Reservation Workflow
 
 ```mermaid
 sequenceDiagram
@@ -110,15 +109,11 @@ sequenceDiagram
     Backend->>MongoDB: Deduct 1 bed & insert Reservation (expiresAt: now + 60 min)
     Backend-->>Frontend: Reservation Confirmed (Token #ABC12345)
 
-    Frontend->>Frontend: Render Fast-Track QR Pass & Green Corridor Notice
-    Patient->>Frontend: Click "Download PDF Medical Pass"
-    Frontend->>Patient: Download vector PDF with QR token & Motor Vehicles Act clearance
-
     alt Patient arrives within 60 minutes
-        Patient->>Triage: Present QR Code / Printed PDF at triage barrier
+        Patient->>Triage: Present Reservation Token at admission desk
         Triage->>Backend: PUT /api/reservations/:id/confirm
         Backend->>MongoDB: Status -> "admitted"
-        Backend-->>Triage: Patient Fast-Track Admitted
+        Backend-->>Triage: Patient Admitted
     else Timer expires (No arrival in 60 minutes)
         Daemon->>MongoDB: Find expired reservations (status: 'active' AND expiresAt < now)
         Daemon->>MongoDB: Restore 1x ICU Bed to hospital inventory & mark 'expired'
@@ -230,42 +225,32 @@ flowchart TD
 - **Turn-by-Turn Driving Navigation:** Every hospital and blood bank card includes a direct **`🧭 Directions`** button that opens real-time Google Maps GPS navigation to the facility gate.
 - **Custom Facility Pins:** Interactive markers displaying available ICU beds, oxygen, and blood stock in clickable popups.
 
-### 4. 🎫 Fast-Track QR Code Emergency Admission Pass
-- **Golden-Hour Bypass Token:** When a patient or ambulance attendant reserves an ICU bed, oxygen cylinder, or blood unit, LifeLink generates a digital **Emergency Fast-Track QR Pass**.
-- **Cryptographic Admission Token:** Encodes reservation ID, facility details, held resource, and exact hold expiration timestamp.
-- **One-Click Print / PDF:** Designed to be scanned at hospital emergency triage reception to admit patients instantly without waiting in paperwork lines.
-
-### 5. 📄 Printable PDF Emergency Pass & STAT Green Corridor Token
-- **One-Click Vector PDF Generation:** Generates client-side high-resolution printable PDF passes (`jspdf`) directly in the browser without server latency.
-- **Embedded QR Admission Token:** Incorporates verified cryptographic reservation hashes readable by hospital triage scanners.
-- **Green Corridor Transit Clearance:** Incorporates legal medical transit notices pursuant to emergency healthcare provisions for zero-delay clearance across highway toll plazas and police checkposts.
-
-### 6. 🏥 Pan-India Official Hospital Directory (10,672+ Verified Centers)
+### 4. 🏥 Pan-India Official Hospital Directory (10,672+ Verified Centers)
 - **National Registry Ingestion:** Ingested the official National Hospital Directory containing **10,672 verified geocoded hospitals** across all 36 States and Union Territories.
 - **Direct All-India Directory Access:** Directly browse and search verified hospitals nationwide with live bed counters, oxygen status, and emergency medicines without radius locks.
 - **Pan-India Multi-Filter:** Filter across all 36 States & UTs, search by keyword/city/hospital name, or filter by critical resource need (ICU beds, general emergency beds, oxygen cylinders, ventilators).
 - **Critical Resource & Medicine Standby:** Live tracking of hospital capacity alongside standby life-saving medicines (Epinephrine, Atropine, Amiodarone, Norepinephrine).
 - **Dedicated Hospital Portal:** Facility admins update stock in real-time, confirm incoming reservations, and restock beds upon discharge.
 
-### 7. 🔒 Atomic Concurrency & Auto-Restock Mechanism
+### 5. 🔒 Atomic Concurrency & Auto-Restock Mechanism
 - **Atomic Operations:** Uses MongoDB atomic updates (`findOneAndUpdate` with conditional checks like `$gte` and `$inc`) to prevent race conditions and double-booking during emergency traffic spikes.
 - **Auto-Expiration Background Cleanup:** An automated background daemon reviews pending holds every 60 seconds; any unconfirmed reservation exceeding its expiry window is automatically marked `expired` and inventory is restocked to the facility in real time.
 
-### 8. 🎪 Voluntary Blood Donation Camps & Donor Drives
+### 6. 🎪 Voluntary Blood Donation Camps & Donor Drives
 - **Regional Camp Directory:** Hospitals, certified blood banks, and NGOs can organize, schedule, and publish blood donation drives across India with target unit goals.
 - **One-Click Donor RSVP:** Logged-in donors can easily pledge blood units to upcoming camps in their home state/city.
 - **Digital Certificates of Appreciation:** Automatically generates official, personalized **Certificate of Appreciation (PDF)** for donors upon attending a camp.
 
-### 9. 📊 India Blood Scarcity & Deficit Analytics Dashboard
+### 7. 📊 India Blood Scarcity & Deficit Analytics Dashboard
 - **National Aggregate Monitoring:** Analyzes live reserve levels across all 2,439 official Indian blood banks.
 - **State-by-State Deficit Heatmap:** Automatically flags critical shortages in rare blood groups (`O-`, `AB-`, `B-`, `A-`) with color-coded deficit status (Critical Deficit, Moderate Shortage, Adequate).
 - **Interactive Multi-Filter Table:** Filter and drill down by Indian State/Territory with instant links to certified local facilities.
 
-### 10. 🛡️ System Administration & Facility Verification
+### 8. 🛡️ System Administration & Facility Verification
 - Dedicated Admin dashboard with total network metrics (hospitals, blood banks, reservations).
 - Interactive facility verification control to grant or revoke verified badges.
 
-### 11. ⚡ Automated Low-Stock Replenishment & Donor Auto-Dispatch
+### 9. ⚡ Automated Low-Stock Replenishment & Donor Auto-Dispatch
 - **Autonomous Deficit Detection:** Continuously monitors unit reserves across all 8 blood groups during inventory updates and reservation checkouts.
 - **Smart Safety Thresholds:** Triggers automatic replenishment when units fall to or below clinical safety thresholds ($\le 4$ units for rare negative groups `O-`, `AB-`, `B-`, `A-`, and $\le 5$ units for common groups).
 - **Automated Emergency Request Generation:** Instantly creates an emergency `BloodRequest` on behalf of the blood bank with `isAutoGenerated: true` and calculates the units needed to restore a safe 12-unit buffer.
@@ -327,7 +312,6 @@ VitalLink/
 │   │   ├── components/
 │   │   │   ├── BloodBankCard.jsx       # Blood bank card with stock badges & navigation
 │   │   │   ├── BloodRequestCard.jsx    # Alert card for emergency blood requests
-│   │   │   ├── EmergencyQRPass.jsx     # Modal with QR Canvas, Print & Vector PDF download
 │   │   │   ├── GoogleMapView.jsx       # Interactive Google Maps view with directions
 │   │   │   ├── HospitalCard.jsx        # Hospital card with resource gauges & directions
 │   │   │   ├── InteractiveMap.jsx      # Leaflet OpenStreetMap view with custom pins
