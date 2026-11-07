@@ -9,7 +9,6 @@ const BloodBankDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState([]);
   const [autoRequests, setAutoRequests] = useState([]);
-  const [scanning, setScanning] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
 
   // Blood bank registration form state
@@ -149,19 +148,6 @@ const BloodBankDashboard = () => {
     }
   };
 
-  const handleTriggerAutoCheck = async () => {
-    try {
-      setScanning(true);
-      const res = await API.post(`/bloodbanks/${bloodBank._id}/auto-check`);
-      setStatusMsg({ text: res.data.message, type: 'info' });
-      fetchAutoRequests(bloodBank._id);
-    } catch (err) {
-      setStatusMsg({ text: 'Failed to run auto-replenishment scan', type: 'danger' });
-    } finally {
-      setScanning(false);
-    }
-  };
-
   const handleReservationStatus = async (resId, newStatus) => {
     try {
       await API.put(`/reservations/${resId}/status`, { status: newStatus });
@@ -281,14 +267,6 @@ const BloodBankDashboard = () => {
           ) : (
             <span className="badge bg-warning text-dark px-3 py-2">Pending Admin Verification</span>
           )}
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-danger fw-bold"
-            onClick={handleTriggerAutoCheck}
-            disabled={scanning}
-          >
-            {scanning ? 'Scanning...' : '⚡ Scan Stock & Auto-Replenish'}
-          </button>
         </div>
       </div>
 
