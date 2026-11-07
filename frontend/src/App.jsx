@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import NavbarComponent from './components/Navbar';
+import AgentChatbot from './components/AgentChatbot';
 import PrivateRoute from './components/PrivateRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -87,6 +88,7 @@ function App() {
               }
             />
           </Routes>
+          <AgentChatbot />
         </SocketProvider>
       </AuthProvider>
     </Router>
