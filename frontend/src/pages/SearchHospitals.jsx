@@ -5,23 +5,10 @@ import InteractiveMap from '../components/InteractiveMap';
 import GoogleMapView from '../components/GoogleMapView';
 import { useSocket } from '../context/SocketContext';
 
-const INDIAN_STATES = [
-  'All India',
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
-  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi',
-  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
-  'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
-];
-
 const SearchHospitals = () => {
   const socket = useSocket();
 
   // Search & Filter State
-  const [selectedState, setSelectedState] = useState('All India');
   const [searchTerm, setSearchTerm] = useState('');
   const [resource, setResource] = useState('');
 
@@ -47,10 +34,6 @@ const SearchHospitals = () => {
         params.radius = radius;
       }
 
-      if (selectedState && selectedState !== 'All India') {
-        params.state = selectedState;
-      }
-
       if (resource) {
         params.resource = resource;
       }
@@ -72,7 +55,7 @@ const SearchHospitals = () => {
 
   useEffect(() => {
     fetchHospitals();
-  }, [selectedState, resource, isGpsActive, radius]);
+  }, [resource, isGpsActive, radius]);
 
   // Listen for real-time inventory updates
   useEffect(() => {
@@ -172,31 +155,15 @@ const SearchHospitals = () => {
           <form onSubmit={handleSearchSubmit}>
             <div className="row g-3 align-items-end">
               {/* Keyword / Facility Name Search */}
-              <div className="col-md-4">
+              <div className="col-md-6">
                 <label className="form-label small fw-semibold text-secondary">Search Keyword / City / Hospital</label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
-                  placeholder="e.g. Apollo, AIIMS, Fortis, Mumbai, Civil..."
+                  placeholder="e.g. Apollo, AIIMS, Fortis, Mumbai, Civil, Bangalore..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-              </div>
-
-              {/* State Filter */}
-              <div className="col-md-3">
-                <label className="form-label small fw-semibold text-secondary">Indian State / Union Territory</label>
-                <select
-                  className="form-select form-select-sm fw-bold border-danger"
-                  value={selectedState}
-                  onChange={(e) => setSelectedState(e.target.value)}
-                >
-                  {INDIAN_STATES.map((state) => (
-                    <option key={state} value={state}>
-                      {state === 'All India' ? '🇮🇳 All India (All States & UTs)' : state}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Resource Filter */}
@@ -216,9 +183,9 @@ const SearchHospitals = () => {
               </div>
 
               {/* Search Action Button */}
-              <div className="col-md-2">
+              <div className="col-md-3">
                 <button type="submit" className="btn btn-danger btn-sm w-100 fw-bold">
-                  🔍 Filter Hospitals
+                  🔍 Search Hospitals
                 </button>
               </div>
             </div>
