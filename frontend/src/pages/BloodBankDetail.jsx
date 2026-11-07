@@ -92,7 +92,7 @@ const BloodBankDetail = () => {
             <h5 className="fw-bold mb-0">Live Blood Inventory</h5>
             <span className="badge bg-danger">Real-time sync</span>
           </div>
-          <Link to="/blood-requests/new" className="btn btn-danger btn-sm fw-bold">
+          <Link to="/blood-request/create" className="btn btn-danger btn-sm fw-bold">
             🩸 Raise Emergency Blood Request
           </Link>
         </div>
@@ -126,7 +126,7 @@ const BloodBankDetail = () => {
                       </td>
                       <td className="text-end">
                         <Link
-                          to={`/blood-requests/new?group=${encodeURIComponent(item.bloodGroup)}`}
+                          to={`/blood-request/create?group=${encodeURIComponent(item.bloodGroup)}`}
                           className={`btn btn-sm ${item.unitsAvailable > 0 ? 'btn-danger' : 'btn-outline-secondary'}`}
                         >
                           🩸 Request {item.bloodGroup}

@@ -77,6 +77,14 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/blood-requests/new"
+              element={
+                <PrivateRoute>
+                  <CreateBloodRequest />
+                </PrivateRoute>
+              }
+            />
           </Routes>
         </SocketProvider>
       </AuthProvider>
