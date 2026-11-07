@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { getISTDate, getISTString } = require('../utils/istTime');
 
 const bloodBankSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -20,8 +21,22 @@ const bloodBankSchema = new mongoose.Schema({
       },
       unitsAvailable: { type: Number, default: 0 }
     }
-  ]
-}, { timestamps: true });
+  ],
+  createdAtIST: { type: String, default: getISTString },
+  updatedAtIST: { type: String, default: getISTString }
+}, {
+  timestamps: {
+    currentTime: getISTDate
+  }
+});
+
+bloodBankSchema.pre('save', function () {
+  const istStr = getISTString();
+  if (!this.createdAtIST) {
+    this.createdAtIST = istStr;
+  }
+  this.updatedAtIST = istStr;
+});
 
 bloodBankSchema.index({ location: '2dsphere' });
 

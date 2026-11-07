@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import BloodBankCard from '../components/BloodBankCard';
-import InteractiveMap from '../components/InteractiveMap';
 import { useSocket } from '../context/SocketContext';
 
 const INDIAN_CITIES = [
@@ -37,7 +36,6 @@ const SearchBloodBanks = () => {
   const [bloodBanks, setBloodBanks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [locMsg, setLocMsg] = useState('');
-  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'map'
 
   const fetchBloodBanks = async (
     targetLat = lat,
@@ -135,24 +133,6 @@ const SearchBloodBanks = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {/* View Toggle */}
-          <div className="btn-group me-2" role="group">
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'cards' ? 'btn-danger' : 'btn-outline-danger'}`}
-              onClick={() => setViewMode('cards')}
-            >
-              📋 Cards
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'map' ? 'btn-danger' : 'btn-outline-danger'}`}
-              onClick={() => setViewMode('map')}
-            >
-              🗺️ Map View
-            </button>
-          </div>
-
           <label className="small fw-semibold text-muted text-nowrap">Jump to City:</label>
           <select
             className="form-select form-select-sm fw-bold border-danger"
@@ -255,16 +235,6 @@ const SearchBloodBanks = () => {
           </form>
         </div>
       </div>
-
-      {/* Map Views */}
-      {viewMode === 'map' && (
-        <InteractiveMap
-          center={[parseFloat(lat) || 28.6139, parseFloat(lng) || 77.2090]}
-          radius={parseInt(radius, 10)}
-          items={bloodBanks}
-          type="bloodbank"
-        />
-      )}
 
       {/* Results */}
       {loading ? (

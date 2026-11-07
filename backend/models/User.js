@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { getISTDate, getISTString } = require('../utils/istTime');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -18,8 +19,22 @@ const userSchema = new mongoose.Schema({
     type: { type: String, enum: ['Point'], default: 'Point' },
     coordinates: { type: [Number], default: [0, 0] }
   },
-  dateOfBirth: Date
-}, { timestamps: true });
+  dateOfBirth: Date,
+  createdAtIST: { type: String, default: getISTString },
+  updatedAtIST: { type: String, default: getISTString }
+}, {
+  timestamps: {
+    currentTime: getISTDate
+  }
+});
+
+userSchema.pre('save', function () {
+  const istStr = getISTString();
+  if (!this.createdAtIST) {
+    this.createdAtIST = istStr;
+  }
+  this.updatedAtIST = istStr;
+});
 
 userSchema.index({ location: '2dsphere' });
 

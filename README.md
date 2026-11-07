@@ -156,13 +156,10 @@ flowchart TD
   - **Tier 4:** Universal Lifesaver Reserve (`O-` protected reserve)
 - **Cross-Inventory Blood Bank Matching:** Queries verified blood banks for existing compatible cold storage units within patient radius and displays real-time unit counts, contact details, and directions.
 
-### 3. 🗺️ Interactive OpenStreetMap & Leaflet Engine
-- **Free & Open-Source Geospatial Visualization:** Powered by Leaflet and OpenStreetMap tiles without requiring third-party API keys or incurring billing quota limits.
-- **Toggle View Switcher:** Seamlessly toggle between:
-  - **`📋 Grid Cards`**
-  - **`🗺️ Interactive Map View`**
-- **Turn-by-Turn Driving Navigation:** Every hospital and blood bank card includes a direct **`🧭 Directions`** button that opens real-time Google Maps GPS navigation to the facility gate.
-- **Custom Facility Pins:** Interactive markers displaying available ICU beds, oxygen, and blood stock in clickable popups.
+### 3. 🧭 Responsive Cards & Turn-by-Turn Google Maps Navigation
+- **Clean Bootstrap 5 Card UI:** Responsive card layout presenting live resource gauges, bed counts, oxygen availability, and blood stock units with zero map bloat.
+- **Turn-by-Turn Driving Directions:** Every hospital and blood bank card includes a direct **`🧭 Directions`** button that opens real-time Google Maps GPS driving navigation directly to the facility gate.
+- **Indian Standard Time (IST) Support:** All database records and UI views format timestamps in IST (UTC +5:30) for clear local presentation.
 
 ### 4. 🏥 Pan-India Official Hospital Directory (10,672+ Verified Centers)
 - **National Registry Ingestion:** Ingested the official National Hospital Directory containing **10,672 verified geocoded hospitals** across all 36 States and Union Territories.
@@ -230,7 +227,6 @@ VitalLink/
 │   │   │   ├── BloodBankCard.jsx       # Blood bank card with stock badges & navigation
 │   │   │   ├── BloodRequestCard.jsx    # Alert card for emergency blood requests with matched banks
 │   │   │   ├── HospitalCard.jsx        # Hospital card with resource gauges & directions
-│   │   │   ├── InteractiveMap.jsx      # Leaflet OpenStreetMap view with custom pins
 │   │   │   ├── Navbar.jsx              # Responsive navigation header with role badge
 │   │   │   ├── PrivateRoute.jsx        # Role-based route guard
 │   │   │   └── ReservationModal.jsx    # Modal dialog for booking beds, ICU & oxygen
@@ -248,8 +244,8 @@ VitalLink/
 │   │   │   ├── Login.jsx               # One-click demo credentials login page
 │   │   │   ├── PatientDashboard.jsx    # Patient holds & active blood request viewer
 │   │   │   ├── Register.jsx            # Multi-role registration with GPS detection
-│   │   │   ├── SearchBloodBanks.jsx    # All-India blood bank search with city jump & map
-│   │   │   └── SearchHospitals.jsx     # Hospital discovery with Card and Map views
+│   │   │   ├── SearchBloodBanks.jsx    # All-India blood bank search with city jump & live stock
+│   │   │   └── SearchHospitals.jsx     # Hospital discovery with responsive cards & directions
 │   │   ├── services/
 │   │   │   └── api.js                  # Axios instance with auth token interceptor
 │   │   ├── App.jsx                     # Route definitions & application root
@@ -332,7 +328,7 @@ LifeLink uses Socket.IO to provide instant peer-to-peer and broadcast emergency 
 | **Frontend Framework** | React 18, Vite | High-performance SPA with fast HMR |
 | **Routing & Navigation** | React Router v7 | Nested, role-guarded client routing |
 | **UI Components** | Bootstrap 5, React-Bootstrap | Clean, accessible, standardized design |
-| **Mapping Engine** | Leaflet, OpenStreetMap | 100% Free geospatial map with interactive popups and routing |
+| **Mapping & Directions** | Google Maps Driving Navigation | Direct GPS turn-by-turn driving directions to facility gate |
 | **Backend Runtime** | Node.js, Express.js | Asynchronous RESTful service tier |
 | **Real-Time Layer** | Socket.IO Client & Server | Sub-second emergency broadcasts & inventory synchronization |
 | **Database & GIS** | MongoDB, Mongoose ODM | Document store with native `2dsphere` geospatial indexing |

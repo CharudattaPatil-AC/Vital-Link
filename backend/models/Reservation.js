@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { getISTDate, getISTString } = require('../utils/istTime');
 
 const reservationSchema = new mongoose.Schema({
   patient: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -16,7 +17,21 @@ const reservationSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'cancelled', 'completed'],
     default: 'pending'
   },
-  notes: String
-}, { timestamps: true });
+  notes: String,
+  createdAtIST: { type: String, default: getISTString },
+  updatedAtIST: { type: String, default: getISTString }
+}, {
+  timestamps: {
+    currentTime: getISTDate
+  }
+});
+
+reservationSchema.pre('save', function () {
+  const istStr = getISTString();
+  if (!this.createdAtIST) {
+    this.createdAtIST = istStr;
+  }
+  this.updatedAtIST = istStr;
+});
 
 module.exports = mongoose.model('Reservation', reservationSchema);

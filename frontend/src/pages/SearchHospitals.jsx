@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import HospitalCard from '../components/HospitalCard';
-import InteractiveMap from '../components/InteractiveMap';
 import { useSocket } from '../context/SocketContext';
 
 const SearchHospitals = () => {
@@ -20,7 +19,6 @@ const SearchHospitals = () => {
 
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('cards'); // 'cards', 'map', 'google'
 
   const fetchHospitals = async () => {
     setLoading(true);
@@ -104,41 +102,14 @@ const SearchHospitals = () => {
     fetchHospitals();
   };
 
-  // Center coordinates for map view: use GPS if active, otherwise India centroid
-  const mapCenter = isGpsActive && lat && lng
-    ? [parseFloat(lat), parseFloat(lng)]
-    : [20.5937, 78.9629];
-
   return (
     <div className="container py-4">
       {/* Header Banner */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <div>
-          <h2 className="fw-bold mb-1 text-danger">🏥 All-India Hospital & Emergency Bed Directory</h2>
-          <p className="text-muted mb-0">
-            Real-time tracking of verified hospitals with ICU beds, oxygen cylinders, ventilators, and emergency care.
-          </p>
-        </div>
-
-        {/* View Mode Switcher */}
-        <div className="d-flex align-items-center gap-2">
-          <div className="btn-group" role="group">
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'cards' ? 'btn-danger' : 'btn-outline-danger'}`}
-              onClick={() => setViewMode('cards')}
-            >
-              📋 Cards
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${viewMode === 'map' ? 'btn-danger' : 'btn-outline-danger'}`}
-              onClick={() => setViewMode('map')}
-            >
-              🗺️ Map View
-            </button>
-          </div>
-        </div>
+      <div className="mb-4">
+        <h2 className="fw-bold mb-1 text-danger">🏥 All-India Hospital & Emergency Bed Directory</h2>
+        <p className="text-muted mb-0">
+          Real-time tracking of verified hospitals with ICU beds, oxygen cylinders, ventilators, and emergency care.
+        </p>
       </div>
 
       {/* Main Search & Filter Card */}
@@ -229,18 +200,6 @@ const SearchHospitals = () => {
           </form>
         </div>
       </div>
-
-      {/* Map Views */}
-      {viewMode === 'map' && (
-        <div className="mb-4">
-          <InteractiveMap
-            center={mapCenter}
-            radius={isGpsActive ? parseInt(radius, 10) : 500000}
-            items={hospitals}
-            type="hospital"
-          />
-        </div>
-      )}
 
       {/* Results Section */}
       {loading ? (

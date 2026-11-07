@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { getISTDate, getISTString } = require('../utils/istTime');
 
 const hospitalSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -17,8 +18,22 @@ const hospitalSchema = new mongoose.Schema({
     oxygenCylinders: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } },
     ventilators: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } }
   },
-  operatingHours: { type: String, default: '24/7' }
-}, { timestamps: true });
+  operatingHours: { type: String, default: '24/7' },
+  createdAtIST: { type: String, default: getISTString },
+  updatedAtIST: { type: String, default: getISTString }
+}, {
+  timestamps: {
+    currentTime: getISTDate
+  }
+});
+
+hospitalSchema.pre('save', function () {
+  const istStr = getISTString();
+  if (!this.createdAtIST) {
+    this.createdAtIST = istStr;
+  }
+  this.updatedAtIST = istStr;
+});
 
 hospitalSchema.index({ location: '2dsphere' });
 
