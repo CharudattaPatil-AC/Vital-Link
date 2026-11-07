@@ -1,7 +1,6 @@
 const Reservation = require('../models/Reservation');
 const Hospital = require('../models/Hospital');
 const BloodBank = require('../models/BloodBank');
-const { checkAndTriggerLowStockRequests } = require('../utils/autoStockReplenish');
 
 // POST /api/reservations - Create reservation with atomic operation
 exports.createReservation = async (req, res) => {
@@ -60,13 +59,6 @@ exports.createReservation = async (req, res) => {
         return res.status(400).json({ message: 'Blood units not available or insufficient quantity' });
       }
       facilityName = facility.name;
-
-      // Automatically check if stock dropped below safety threshold and raise donor requests
-      const io = req.app.get('io');
-      checkAndTriggerLowStockRequests(facility, io).catch(err => {
-        console.error('Error in auto low-stock check after reservation:', err);
-      });
-
     } else {
       return res.status(400).json({ message: 'Invalid facility type' });
     }
