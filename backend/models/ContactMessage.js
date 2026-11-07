@@ -29,3 +29,4 @@ contactMessageSchema.pre('save', function () {
 });
 
 module.exports = mongoose.model('ContactMessage', contactMessageSchema);
+

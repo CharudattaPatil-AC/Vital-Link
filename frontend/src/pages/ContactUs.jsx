@@ -49,20 +49,17 @@ const ContactUs = () => {
     {
       name: 'Bhavesh Wagh',
       phone: '9373162282',
-      email: 'bhavesh.wagh.cmaug26@gmail.com',
-      role: 'Database & Backend Integration'
+      email: 'bhavesh.wagh.cmaug26@gmail.com'
     },
     {
       name: 'Divyashish Negi',
       phone: '7357644803',
-      email: 'divyashish.negi.cmaug26@gmail.com',
-      role: 'Frontend & UI Architecture'
+      email: 'divyashish.negi.cmaug26@gmail.com'
     },
     {
       name: 'Charudatta Patil',
       phone: '7798615673',
-      email: 'charudatta.patil.cmaug26@gmail.com',
-      role: 'Project Lead & Full-Stack Systems'
+      email: 'charudatta.patil.cmaug26@gmail.com'
     }
   ];
 
@@ -89,8 +86,7 @@ const ContactUs = () => {
               {developers.map((dev, idx) => (
                 <div key={idx} className="card border-0 shadow-sm p-3 border-start border-4 border-danger">
                   <div className="card-body p-1">
-                    <h5 className="fw-bold mb-1 text-dark">{dev.name}</h5>
-                    <div className="small text-danger fw-semibold mb-2">{dev.role}</div>
+                    <h5 className="fw-bold mb-2 text-dark">{dev.name}</h5>
                     <div className="small text-muted mb-1">
                       <strong>Phone: </strong>
                       <a href={`tel:${dev.phone}`} className="text-decoration-none text-dark fw-bold">
@@ -215,3 +211,4 @@ const ContactUs = () => {
 };
 
 export default ContactUs;
+

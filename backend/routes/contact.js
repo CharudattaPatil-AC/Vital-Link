@@ -8,3 +8,4 @@ router.post('/', submitMessage);
 router.get('/', protect, authorize('admin'), getMessages);
 
 module.exports = router;
+

@@ -5,27 +5,18 @@ const AboutUs = () => {
   const teamMembers = [
     {
       name: 'Charudatta Patil',
-      role: 'Project Lead & Backend Architecture',
       phone: '7798615673',
-      email: 'charudatta.patil.cmaug26@gmail.com',
-      avatar: '👨‍💻',
-      bio: 'Leading system architecture, RESTful API development, atomic reservation engine, and MongoDB indexing.'
+      email: 'charudatta.patil.cmaug26@gmail.com'
     },
     {
       name: 'Divyashish Negi',
-      role: 'Frontend Engineering & UI/UX Design',
       phone: '7357644803',
-      email: 'divyashish.negi.cmaug26@gmail.com',
-      avatar: '🎨',
-      bio: 'Architecting React 18 single-page application, responsive Bootstrap 5 interface, and navigation workflows.'
+      email: 'divyashish.negi.cmaug26@gmail.com'
     },
     {
       name: 'Bhavesh Wagh',
-      role: 'Database Engineering & Business Logic',
       phone: '9373162282',
-      email: 'bhavesh.wagh.cmaug26@gmail.com',
-      avatar: '💾',
-      bio: 'Designing normalized MongoDB schemas, IST timestamping, facility data integration, and testing.'
+      email: 'bhavesh.wagh.cmaug26@gmail.com'
     }
   ];
 
@@ -39,7 +30,7 @@ const AboutUs = () => {
             About <span className="text-danger">LifeLink</span>
           </h1>
           <p className="lead text-muted mx-auto" style={{ maxWidth: '800px' }}>
-            A centralized, real-time emergency healthcare resource coordination and rare blood matching platform 
+            A centralized, real-time emergency healthcare resource coordination and rare blood matching platform
             built to solve the critical <strong>"Golden Hour"</strong> bottleneck during life-threatening medical emergencies.
           </p>
         </div>
@@ -52,7 +43,7 @@ const AboutUs = () => {
                 <div className="fs-1 text-danger mb-3">🎯</div>
                 <h5 className="fw-bold">Our Mission</h5>
                 <p className="text-muted small mb-0">
-                  To eliminate delay and panic during medical emergencies by providing instant, verified visibility 
+                  To eliminate delay and panic during medical emergencies by providing instant, verified visibility
                   into ICU beds, oxygen, ventilators, and rare blood units.
                 </p>
               </div>
@@ -64,7 +55,7 @@ const AboutUs = () => {
                 <div className="fs-1 text-danger mb-3">🏥</div>
                 <h5 className="fw-bold">Emergency Bed Network</h5>
                 <p className="text-muted small mb-0">
-                  Enables patients and attendants to view live hospital capacities and place 1-click bed reservations 
+                  Enables patients and attendants to view live hospital capacities and place 1-click bed reservations
                   that are held until patient triage admission.
                 </p>
               </div>
@@ -76,7 +67,7 @@ const AboutUs = () => {
                 <div className="fs-1 text-danger mb-3">🩸</div>
                 <h5 className="fw-bold">Rare Blood Matching</h5>
                 <p className="text-muted small mb-0">
-                  Maps patient emergency blood needs against 2,439+ verified certified blood banks with live inventory 
+                  Maps patient emergency blood needs against 2,439+ verified certified blood banks with live inventory
                   across all 8 blood groups including rare Rh-negative types.
                 </p>
               </div>
@@ -126,15 +117,10 @@ const AboutUs = () => {
             <div key={idx} className="col-md-4">
               <div className="card h-100 border-0 shadow-sm text-center p-3 border-top border-4 border-danger">
                 <div className="card-body">
-                  <div className="fs-1 mb-2">{member.avatar}</div>
-                  <h5 className="fw-bold mb-1 text-dark">{member.name}</h5>
-                  <span className="badge bg-danger-subtle text-danger border border-danger mb-3">
-                    {member.role}
-                  </span>
-                  <p className="text-muted small mb-3">{member.bio}</p>
+                  <h5 className="fw-bold mb-3 text-dark">{member.name}</h5>
 
-                  <div className="p-2 bg-light rounded small text-start">
-                    <div className="mb-1">
+                  <div className="p-3 bg-light rounded small text-start">
+                    <div className="mb-2">
                       <strong>📞 Phone: </strong>
                       <a href={`tel:${member.phone}`} className="text-decoration-none text-dark fw-semibold">
                         +91 {member.phone}
@@ -174,3 +160,4 @@ const AboutUs = () => {
 };
 
 export default AboutUs;
+
