@@ -11,7 +11,6 @@ const Hospital = require('./models/Hospital');
 const BloodBank = require('./models/BloodBank');
 const Reservation = require('./models/Reservation');
 const BloodRequest = require('./models/BloodRequest');
-const DonationCamp = require('./models/DonationCamp');
 
 const seedData = async () => {
   try {
@@ -24,7 +23,6 @@ const seedData = async () => {
     await BloodBank.deleteMany({});
     await Reservation.deleteMany({});
     await BloodRequest.deleteMany({});
-    await DonationCamp.deleteMany({});
 
     console.log('Cleared existing database collections.');
 
@@ -219,73 +217,6 @@ const seedData = async () => {
     }
 
     console.log(`Database populated with ${totalHospitalsCount} emergency hospitals.`);
-
-    // 2.5 Seed Initial Blood Donation Camps
-    const camps = await DonationCamp.create([
-      {
-        name: 'National Red Cross Mega Blood Donation Drive',
-        organizer: adminUser._id,
-        organizerModel: 'BloodBank',
-        organizerName: 'Indian Red Cross Society',
-        startDate: new Date(Date.now() + 86400000 * 2), // 2 days later
-        endDate: new Date(Date.now() + 86400000 * 4),
-        venue: 'Red Cross Bhawan, 1 Red Cross Road',
-        city: 'New Delhi',
-        state: 'Delhi',
-        contactPhone: '+91 11 2371 6441',
-        targetUnits: 250,
-        collectedUnits: 45,
-        status: 'upcoming',
-        location: { type: 'Point', coordinates: [77.2100, 28.6210] },
-        registeredDonors: [
-          {
-            donor: donorUser._id,
-            donorName: donorUser.name,
-            bloodGroup: 'O+',
-            phone: donorUser.phone,
-            email: donorUser.email,
-            attended: true,
-            unitsDonated: 1,
-            certificateId: 'CERT-LL-REDX-101'
-          }
-        ]
-      },
-      {
-        name: 'Rotary Club & Apollo Lifesaver Camp',
-        organizer: apolloManager._id,
-        organizerModel: 'Hospital',
-        organizerName: 'Apollo Hospital Mumbai',
-        startDate: new Date(Date.now() + 86400000 * 5),
-        endDate: new Date(Date.now() + 86400000 * 6),
-        venue: 'Bandra Kurla Complex Community Hall',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        contactPhone: '+91 22 2650 1234',
-        targetUnits: 150,
-        collectedUnits: 0,
-        status: 'upcoming',
-        location: { type: 'Point', coordinates: [72.8656, 19.0660] },
-        registeredDonors: []
-      },
-      {
-        name: 'Bengaluru Tech Park Blood Donation Initiative',
-        organizer: adminUser._id,
-        organizerModel: 'Hospital',
-        organizerName: 'Manipal Hospital & Tech Forum',
-        startDate: new Date(Date.now() + 86400000 * 7),
-        endDate: new Date(Date.now() + 86400000 * 8),
-        venue: 'EcoWorld Amphitheatre, Outer Ring Road',
-        city: 'Bengaluru',
-        state: 'Karnataka',
-        contactPhone: '+91 80 4012 3456',
-        targetUnits: 200,
-        collectedUnits: 0,
-        status: 'upcoming',
-        location: { type: 'Point', coordinates: [77.6845, 12.9242] },
-        registeredDonors: []
-      }
-    ]);
-    console.log(`Created ${camps.length} sample donation camps across India.`);
 
     // 3. Load and Seed Kaggle Official Blood Bank Directory (2,400+ Blood Banks)
     const jsonPath = path.join(__dirname, './data/allIndiaBloodBanks.json');

@@ -171,21 +171,6 @@ const DonorDashboard = () => {
         </div>
       </div>
 
-      {/* Donation Drives Banner */}
-      <div className="card shadow-sm border-0 mb-4 bg-danger-subtle border-start border-4 border-danger">
-        <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-          <div>
-            <h5 className="fw-bold text-danger mb-1">🎪 Regional Blood Donation Drives & Camps</h5>
-            <p className="small text-secondary mb-0">
-              Pledge a blood unit at nearby community drives across India, get medical checkups, and receive verified digital appreciation certificates.
-            </p>
-          </div>
-          <Link to="/camps" className="btn btn-danger fw-bold text-nowrap">
-            View Blood Camps & Drives
-          </Link>
-        </div>
-      </div>
-
       {/* Matched Blood Requests */}
       <h4 className="fw-bold mb-3">Emergency Blood Requests Matched to You</h4>
       {bloodRequests.length > 0 ? (

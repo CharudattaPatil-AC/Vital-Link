@@ -90,21 +90,6 @@ const Home = () => {
               </div>
             </div>
           </div>
-
-          <div className="col-12">
-            <div className="card p-3 shadow-sm border-0 bg-white border-start border-4 border-danger">
-              <div className="card-body">
-                <div className="fs-1 mb-2">🎪</div>
-                <h5 className="card-title fw-bold">Blood Donation Drives & Camps</h5>
-                <p className="card-text text-muted">
-                  Join upcoming voluntary blood donation camps across India, pledge units with 1-click RSVP, and download verified digital Appreciation Certificates.
-                </p>
-                <Link to="/camps" className="btn btn-sm btn-danger fw-bold">
-                  Explore Donation Camps &rarr;
-                </Link>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

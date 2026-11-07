@@ -17,7 +17,6 @@ import DonorDashboard from './pages/DonorDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import CreateBloodRequest from './pages/CreateBloodRequest';
 import AdminDashboard from './pages/AdminDashboard';
-import DonationCamps from './pages/DonationCamps';
 
 function App() {
   return (
@@ -33,7 +32,6 @@ function App() {
             <Route path="/hospitals" element={<SearchHospitals />} />
             <Route path="/search/bloodbanks" element={<SearchBloodBanks />} />
             <Route path="/bloodbanks" element={<SearchBloodBanks />} />
-            <Route path="/camps" element={<DonationCamps />} />
             <Route path="/hospitals/:id" element={<HospitalDetail />} />
             <Route path="/bloodbanks/:id" element={<BloodBankDetail />} />
             <Route

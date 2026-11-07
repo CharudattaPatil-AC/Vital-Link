@@ -44,7 +44,6 @@ app.use('/api/bloodbanks', require('./routes/bloodBanks'));
 app.use('/api/donors', require('./routes/donors'));
 app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/blood-requests', require('./routes/bloodRequests'));
-app.use('/api/camps', require('./routes/donationCamps'));
 
 // Global Error Handler
 app.use((err, req, res, next) => {
