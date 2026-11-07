@@ -87,9 +87,14 @@ const BloodBankDetail = () => {
 
       {/* Live Inventory List */}
       <div className="card shadow-sm border-0">
-        <div className="card-header bg-light py-3 d-flex justify-content-between align-items-center">
-          <h5 className="fw-bold mb-0">Live Blood Inventory</h5>
-          <span className="badge bg-danger">Real-time sync</span>
+        <div className="card-header bg-light py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h5 className="fw-bold mb-0">Live Blood Inventory</h5>
+            <span className="badge bg-danger">Real-time sync</span>
+          </div>
+          <Link to="/blood-requests/new" className="btn btn-danger btn-sm fw-bold">
+            🩸 Raise Emergency Blood Request
+          </Link>
         </div>
         <div className="card-body p-0">
           <div className="table-responsive">
@@ -98,7 +103,8 @@ const BloodBankDetail = () => {
                 <tr>
                   <th>Blood Group</th>
                   <th>Units Available</th>
-                  <th className="text-end">Status</th>
+                  <th>Status</th>
+                  <th className="text-end">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,7 +115,7 @@ const BloodBankDetail = () => {
                         <span className="badge bg-danger fs-6 px-3">{item.bloodGroup}</span>
                       </td>
                       <td className="fw-bold fs-5">{item.unitsAvailable} Units</td>
-                      <td className="text-end">
+                      <td>
                         {item.unitsAvailable > 5 ? (
                           <span className="badge bg-success">Adequate Stock</span>
                         ) : item.unitsAvailable > 0 ? (
@@ -118,11 +124,19 @@ const BloodBankDetail = () => {
                           <span className="badge bg-secondary">Out of Stock</span>
                         )}
                       </td>
+                      <td className="text-end">
+                        <Link
+                          to={`/blood-requests/new?group=${encodeURIComponent(item.bloodGroup)}`}
+                          className={`btn btn-sm ${item.unitsAvailable > 0 ? 'btn-danger' : 'btn-outline-secondary'}`}
+                        >
+                          🩸 Request {item.bloodGroup}
+                        </Link>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3" className="text-center text-muted py-3">
+                    <td colSpan="4" className="text-center text-muted py-3">
                       No inventory listed.
                     </td>
                   </tr>

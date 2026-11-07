@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import API from '../services/api';
 
 const COMPATIBILITY_MAP = {
@@ -15,9 +15,12 @@ const COMPATIBILITY_MAP = {
 
 const CreateBloodRequest = () => {
   const navigate = useNavigate();
+  const locationHook = useLocation();
+  const searchParams = new URLSearchParams(locationHook.search);
+  const initialGroup = searchParams.get('group') || 'B+';
 
   const [formData, setFormData] = useState({
-    bloodGroup: 'B+',
+    bloodGroup: initialGroup,
     unitsNeeded: 2,
     urgency: 'critical',
     hospitalName: '',
