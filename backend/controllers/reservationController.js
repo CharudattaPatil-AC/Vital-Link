@@ -1,11 +1,10 @@
 const Reservation = require('../models/Reservation');
 const Hospital = require('../models/Hospital');
-const BloodBank = require('../models/BloodBank');
 
 // POST /api/reservations - Create reservation with atomic operation
 exports.createReservation = async (req, res) => {
   try {
-    const { facilityId, facilityType, resourceType, bloodGroup, quantity, notes } = req.body;
+    const { facilityId, facilityType, resourceType, quantity, notes } = req.body;
     const qty = quantity || 1;
 
     let facility;
@@ -36,40 +35,16 @@ exports.createReservation = async (req, res) => {
       }
       facilityName = facility.name;
 
-    } else if (facilityType === 'bloodbank') {
-      if (!bloodGroup) {
-        return res.status(400).json({ message: 'Blood group is required for blood bank reservation' });
-      }
-
-      facility = await BloodBank.findOneAndUpdate(
-        {
-          _id: facilityId,
-          'inventory': {
-            $elemMatch: {
-              bloodGroup: bloodGroup,
-              unitsAvailable: { $gte: qty }
-            }
-          }
-        },
-        { $inc: { 'inventory.$.unitsAvailable': -qty } },
-        { new: true }
-      );
-
-      if (!facility) {
-        return res.status(400).json({ message: 'Blood units not available or insufficient quantity' });
-      }
-      facilityName = facility.name;
     } else {
-      return res.status(400).json({ message: 'Invalid facility type' });
+      return res.status(400).json({ message: 'Reservations are only applicable for hospital emergency beds and resources' });
     }
 
     const reservation = await Reservation.create({
       patient: req.user._id,
       facilityId,
-      facilityType,
+      facilityType: 'hospital',
       facilityName,
       resourceType,
-      bloodGroup,
       quantity: qty,
       notes,
       status: 'pending',
@@ -215,22 +190,6 @@ exports.checkExpiredReservations = async (io) => {
               resources: updated.resources
             });
           }
-        }
-      } else if (res.facilityType === 'bloodbank') {
-        const updated = await BloodBank.findOneAndUpdate(
-          {
-            _id: res.facilityId,
-            'inventory.bloodGroup': res.bloodGroup
-          },
-          { $inc: { 'inventory.$.unitsAvailable': res.quantity } },
-          { new: true }
-        );
-        if (io && updated) {
-          io.emit('inventoryUpdate', {
-            type: 'bloodbank',
-            facilityId: updated._id,
-            inventory: updated.inventory
-          });
         }
       }
 

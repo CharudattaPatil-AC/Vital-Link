@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API from '../services/api';
-import ReservationModal from '../components/ReservationModal';
 import { useSocket } from '../context/SocketContext';
 
 const BloodBankDetail = () => {
@@ -11,10 +10,6 @@ const BloodBankDetail = () => {
   const [bloodBank, setBloodBank] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedBloodGroup, setSelectedBloodGroup] = useState('');
-  const [reserveSuccess, setReserveSuccess] = useState('');
 
   const fetchBloodBank = async () => {
     try {
@@ -32,23 +27,15 @@ const BloodBankDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (!socket || !bloodBank) return;
+    if (!socket || !id) return;
     const handleUpdate = (data) => {
-      if (data.type === 'bloodbank' && data.facilityId === bloodBank._id) {
-        setBloodBank((prev) => ({
-          ...prev,
-          inventory: data.inventory
-        }));
+      if (data.type === 'bloodbank' && data.facilityId === id) {
+        setBloodBank((prev) => (prev ? { ...prev, inventory: data.inventory } : prev));
       }
     };
     socket.on('inventoryUpdate', handleUpdate);
     return () => socket.off('inventoryUpdate', handleUpdate);
-  }, [socket, bloodBank]);
-
-  const handleOpenReservation = (group) => {
-    setSelectedBloodGroup(group);
-    setModalOpen(true);
-  };
+  }, [socket, id]);
 
   if (loading) {
     return (
@@ -62,9 +49,11 @@ const BloodBankDetail = () => {
 
   if (error || !bloodBank) {
     return (
-      <div className="container py-5">
+      <div className="container py-5 text-center">
         <div className="alert alert-danger">{error || 'Blood bank not found'}</div>
-        <Link to="/search/bloodbanks" className="btn btn-outline-danger">Back to Blood Banks</Link>
+        <Link to="/search/bloodbanks" className="btn btn-outline-danger">
+          Back to Search
+        </Link>
       </div>
     );
   }
@@ -75,47 +64,33 @@ const BloodBankDetail = () => {
         &larr; Back to Search
       </Link>
 
-      {reserveSuccess && (
-        <div className="alert alert-success alert-dismissible fade show" role="alert">
-          {reserveSuccess}
-          <button type="button" className="btn-close" onClick={() => setReserveSuccess('')}></button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="card shadow-sm border-0 mb-4">
         <div className="card-body p-4">
           <div className="d-flex justify-content-between align-items-start">
             <div>
               <h2 className="fw-bold text-danger mb-1">🩸 {bloodBank.name}</h2>
-              <p className="text-muted mb-2">📍 {bloodBank.address}</p>
-              <div className="d-flex flex-wrap gap-3 text-muted small align-items-center">
-                <span>📞 Phone: <strong>{bloodBank.phone}</strong></span>
-                <span>✉️ Email: <strong>{bloodBank.email}</strong></span>
-                {bloodBank.location?.coordinates && (
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${bloodBank.location.coordinates[1]},${bloodBank.location.coordinates[0]}&travelmode=driving`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-primary btn-sm text-white fw-bold py-1 px-3"
-                  >
-                    🧭 Navigate with Google Maps
-                  </a>
-                )}
+              <p className="text-muted mb-2">{bloodBank.address}</p>
+              <div className="d-flex gap-3 text-muted small">
+                <span>📞 {bloodBank.phone || 'N/A'}</span>
+                <span>✉️ {bloodBank.email || 'N/A'}</span>
               </div>
             </div>
             {bloodBank.verified && (
               <span className="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6">
-                ✓ Certified Blood Bank
+                ✓ Verified Blood Bank
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Blood Inventory Table */}
-      <h4 className="fw-bold mb-3">Available Blood Inventory</h4>
-      <div className="card border-0 shadow-sm mb-4">
+      {/* Live Inventory List */}
+      <div className="card shadow-sm border-0">
+        <div className="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+          <h5 className="fw-bold mb-0">Live Blood Inventory</h5>
+          <span className="badge bg-danger">Real-time sync</span>
+        </div>
         <div className="card-body p-0">
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
@@ -123,8 +98,7 @@ const BloodBankDetail = () => {
                 <tr>
                   <th>Blood Group</th>
                   <th>Units Available</th>
-                  <th>Status</th>
-                  <th className="text-end">Action</th>
+                  <th className="text-end">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,7 +109,7 @@ const BloodBankDetail = () => {
                         <span className="badge bg-danger fs-6 px-3">{item.bloodGroup}</span>
                       </td>
                       <td className="fw-bold fs-5">{item.unitsAvailable} Units</td>
-                      <td>
+                      <td className="text-end">
                         {item.unitsAvailable > 5 ? (
                           <span className="badge bg-success">Adequate Stock</span>
                         ) : item.unitsAvailable > 0 ? (
@@ -144,20 +118,11 @@ const BloodBankDetail = () => {
                           <span className="badge bg-secondary">Out of Stock</span>
                         )}
                       </td>
-                      <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-danger fw-semibold"
-                          disabled={item.unitsAvailable <= 0}
-                          onClick={() => handleOpenReservation(item.bloodGroup)}
-                        >
-                          {item.unitsAvailable > 0 ? 'Reserve Units' : 'Unavailable'}
-                        </button>
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center text-muted py-3">
+                    <td colSpan="3" className="text-center text-muted py-3">
                       No inventory listed.
                     </td>
                   </tr>
@@ -167,20 +132,6 @@ const BloodBankDetail = () => {
           </div>
         </div>
       </div>
-
-      {/* Reservation Modal */}
-      <ReservationModal
-        show={modalOpen}
-        onClose={() => setModalOpen(false)}
-        facility={bloodBank}
-        facilityType="bloodbank"
-        resourceType="blood"
-        bloodGroup={selectedBloodGroup}
-        onReserved={() => {
-          setReserveSuccess('Your blood unit reservation has been held for 1 hour!');
-          fetchBloodBank();
-        }}
-      />
     </div>
   );
 };

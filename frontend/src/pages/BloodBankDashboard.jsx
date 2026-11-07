@@ -7,7 +7,6 @@ const BloodBankDashboard = () => {
 
   const [bloodBank, setBloodBank] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [reservations, setReservations] = useState([]);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
 
   // Blood bank registration form state
@@ -43,36 +42,9 @@ const BloodBankDashboard = () => {
     }
   };
 
-  const fetchReservations = async () => {
-    try {
-      const res = await API.get('/reservations');
-      setReservations(res.data);
-    } catch (err) {
-      console.error('Error fetching reservations:', err);
-    }
-  };
-
   useEffect(() => {
     fetchMyBloodBank();
-    fetchReservations();
   }, []);
-
-  useEffect(() => {
-    if (!socket || !bloodBank) return;
-
-    const handleNewRes = (data) => {
-      if (data.facilityId === bloodBank._id) {
-        fetchReservations();
-        setStatusMsg({ text: 'New blood reservation received!', type: 'info' });
-      }
-    };
-
-    socket.on('reservationCreated', handleNewRes);
-
-    return () => {
-      socket.off('reservationCreated', handleNewRes);
-    };
-  }, [socket, bloodBank]);
 
   const handleRegisterBloodBank = async (e) => {
     e.preventDefault();
@@ -113,17 +85,6 @@ const BloodBankDashboard = () => {
       setStatusMsg({ text: 'Live blood stock updated and broadcasted!', type: 'success' });
     } catch (err) {
       setStatusMsg({ text: err.response?.data?.message || 'Failed to update stock', type: 'danger' });
-    }
-  };
-
-  const handleReservationStatus = async (resId, newStatus) => {
-    try {
-      await API.put(`/reservations/${resId}/status`, { status: newStatus });
-      fetchReservations();
-      fetchMyBloodBank();
-      setStatusMsg({ text: `Reservation updated to ${newStatus}`, type: 'success' });
-    } catch (err) {
-      setStatusMsg({ text: err.response?.data?.message || 'Failed to update reservation', type: 'danger' });
     }
   };
 
@@ -279,90 +240,6 @@ const BloodBankDashboard = () => {
               </button>
             </div>
           </form>
-        </div>
-      </div>
-
-      {/* Blood Reservations Table */}
-      <div className="card shadow-sm border-0">
-        <div className="card-header bg-light py-3">
-          <h5 className="fw-bold mb-0">Incoming Blood Unit Reservations</h5>
-        </div>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Patient Name</th>
-                  <th>Contact</th>
-                  <th>Blood Group</th>
-                  <th>Units Reserved</th>
-                  <th>Notes</th>
-                  <th>Status</th>
-                  <th className="text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reservations.length > 0 ? (
-                  reservations.map((res) => (
-                    <tr key={res._id}>
-                      <td className="fw-semibold">{res.patient?.name || 'Anonymous'}</td>
-                      <td>{res.patient?.phone || 'N/A'}</td>
-                      <td>
-                        <span className="badge bg-danger fs-6">{res.bloodGroup}</span>
-                      </td>
-                      <td className="fw-bold">{res.quantity} Units</td>
-                      <td className="small text-muted">{res.notes || 'None'}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            res.status === 'confirmed'
-                              ? 'bg-success'
-                              : res.status === 'cancelled'
-                              ? 'bg-secondary'
-                              : 'bg-warning text-dark'
-                          }`}
-                        >
-                          {res.status}
-                        </span>
-                      </td>
-                      <td className="text-end">
-                        {res.status === 'pending' && (
-                          <div className="btn-group btn-group-sm">
-                            <button
-                              className="btn btn-success"
-                              onClick={() => handleReservationStatus(res._id, 'confirmed')}
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              className="btn btn-outline-danger"
-                              onClick={() => handleReservationStatus(res._id, 'cancelled')}
-                            >
-                              Cancel & Restock
-                            </button>
-                          </div>
-                        )}
-                        {res.status === 'confirmed' && (
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleReservationStatus(res._id, 'completed')}
-                          >
-                            Mark Dispensed
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center text-muted py-4">
-                      No blood reservations found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
     </div>
