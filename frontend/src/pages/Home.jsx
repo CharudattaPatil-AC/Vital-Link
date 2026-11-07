@@ -91,8 +91,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="col-md-6">
-            <div className="card h-100 p-3 shadow-sm border-0 bg-white border-start border-4 border-danger">
+          <div className="col-12">
+            <div className="card p-3 shadow-sm border-0 bg-white border-start border-4 border-danger">
               <div className="card-body">
                 <div className="fs-1 mb-2">🎪</div>
                 <h5 className="card-title fw-bold">Blood Donation Drives & Camps</h5>
@@ -101,21 +101,6 @@ const Home = () => {
                 </p>
                 <Link to="/camps" className="btn btn-sm btn-danger fw-bold">
                   Explore Donation Camps &rarr;
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-6">
-            <div className="card h-100 p-3 shadow-sm border-0 bg-white border-start border-4 border-primary">
-              <div className="card-body">
-                <div className="fs-1 mb-2">📊</div>
-                <h5 className="card-title fw-bold">India Blood Scarcity Analytics</h5>
-                <p className="card-text text-muted">
-                  Live national aggregate monitoring across all 2,439 official Indian blood banks with state-by-state deficit indicators and rare group alerts.
-                </p>
-                <Link to="/analytics/scarcity" className="btn btn-sm btn-primary fw-bold">
-                  View Scarcity Analytics &rarr;
                 </Link>
               </div>
             </div>

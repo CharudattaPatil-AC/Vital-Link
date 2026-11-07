@@ -18,7 +18,6 @@ import PatientDashboard from './pages/PatientDashboard';
 import CreateBloodRequest from './pages/CreateBloodRequest';
 import AdminDashboard from './pages/AdminDashboard';
 import DonationCamps from './pages/DonationCamps';
-import ScarcityAnalytics from './pages/ScarcityAnalytics';
 
 function App() {
   return (
@@ -35,7 +34,6 @@ function App() {
             <Route path="/search/bloodbanks" element={<SearchBloodBanks />} />
             <Route path="/bloodbanks" element={<SearchBloodBanks />} />
             <Route path="/camps" element={<DonationCamps />} />
-            <Route path="/analytics/scarcity" element={<ScarcityAnalytics />} />
             <Route path="/hospitals/:id" element={<HospitalDetail />} />
             <Route path="/bloodbanks/:id" element={<BloodBankDetail />} />
             <Route

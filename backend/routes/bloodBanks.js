@@ -7,7 +7,6 @@ const {
   updateInventory,
   getMyBloodBank,
   toggleVerifyBloodBank,
-  getScarcityAnalytics,
   getFacilityAutoRequests,
   triggerFacilityAutoCheck
 } = require('../controllers/bloodBankController');
@@ -15,7 +14,6 @@ const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/roleCheck');
 
 router.get('/', getBloodBanks);
-router.get('/analytics/scarcity', getScarcityAnalytics);
 router.get('/my', protect, authorize('bloodbank', 'admin'), getMyBloodBank);
 router.get('/:id', getBloodBankById);
 router.get('/:id/auto-requests', protect, getFacilityAutoRequests);

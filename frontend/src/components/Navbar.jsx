@@ -61,9 +61,6 @@ const Navbar = () => {
               <Link className="nav-link text-white" to="/camps">Donation Camps</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link text-white" to="/analytics/scarcity">Scarcity Analytics</Link>
-            </li>
-            <li className="nav-item">
               <Link className="nav-link text-white fw-semibold" to="/blood-request/create">
                 🚨 Emergency Request
               </Link>
