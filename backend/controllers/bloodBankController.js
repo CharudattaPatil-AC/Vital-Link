@@ -1,5 +1,4 @@
 const BloodBank = require('../models/BloodBank');
-const BloodRequest = require('../models/BloodRequest');
 
 // GET /api/bloodbanks - Search nearby blood banks
 exports.getBloodBanks = async (req, res) => {
@@ -153,7 +152,7 @@ exports.getMyBloodBank = async (req, res) => {
   }
 };
 
-// GET /api/bloodbanks/:id/verify - Toggle verification (admin only)
+// PUT /api/bloodbanks/:id/verify - Toggle verification (admin only)
 exports.toggleVerifyBloodBank = async (req, res) => {
   try {
     const bloodBank = await BloodBank.findById(req.params.id);
