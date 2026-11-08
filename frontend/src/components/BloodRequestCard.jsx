@@ -121,7 +121,7 @@ const BloodRequestCard = ({ request, onCancel }) => {
                         )}
                       </div>
                       <Link
-                        to={`/bloodbanks/${bank.bloodBank?._id || bank.bloodBank}`}
+                        to={`/bloodbanks/${bank.bloodBank?._id || bank.bloodBank}?requested=${encodeURIComponent(bloodGroup)}`}
                         className="btn btn-sm btn-outline-danger"
                       >
                         View Stock &rarr;

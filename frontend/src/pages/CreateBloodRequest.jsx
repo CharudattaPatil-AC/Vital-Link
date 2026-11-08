@@ -143,7 +143,7 @@ const CreateBloodRequest = () => {
                                   )}
                                 </div>
                               </div>
-                              <Link to={`/bloodbanks/${bank.bloodBank?._id || bank.bloodBank}`} className="btn btn-sm btn-outline-danger">
+                              <Link to={`/bloodbanks/${bank.bloodBank?._id || bank.bloodBank}?requested=${encodeURIComponent(formData.bloodGroup)}`} className="btn btn-sm btn-outline-danger">
                                 View Stock &rarr;
                               </Link>
                             </div>
