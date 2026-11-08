@@ -1,14 +1,12 @@
 const BloodRequest = require('../models/BloodRequest');
 const BloodBank = require('../models/BloodBank');
-const { COMPATIBILITY_MATRIX } = require('../utils/bloodCompatibility');
 
-// POST /api/blood-requests - Create emergency blood request with Smart Blood Bank Inventory Matching
+// POST /api/blood-requests - Create emergency blood request with Exact Blood Group Matching
 exports.createBloodRequest = async (req, res) => {
   try {
     const { bloodGroup, unitsNeeded, urgency, location, radius, contactPhone, hospitalName } = req.body;
 
-    // 1. Determine compatible blood groups using transfusion matrix
-    const compatibleGroups = COMPATIBILITY_MATRIX[bloodGroup] || [bloodGroup];
+    const compatibleGroups = [bloodGroup];
     const searchRadius = parseInt(radius, 10) || 25000;
 
     const bloodRequest = await BloodRequest.create({
@@ -27,7 +25,7 @@ exports.createBloodRequest = async (req, res) => {
       status: 'active'
     });
 
-    // 2. Query nearby verified blood banks holding compatible units
+    // Query nearby verified blood banks holding the exact blood group requested
     const nearbyBloodBanks = await BloodBank.find({
       verified: true,
       location: {
@@ -41,13 +39,13 @@ exports.createBloodRequest = async (req, res) => {
       },
       'inventory': {
         $elemMatch: {
-          bloodGroup: { $in: compatibleGroups },
+          bloodGroup: bloodGroup,
           unitsAvailable: { $gt: 0 }
         }
       }
     }).select('name phone address inventory location');
 
-    // 3. Map matched blood banks with distance, exact vs compatible tier, and units
+    // Map matched blood banks with distance and available units of requested blood group
     const [pLng, pLat] = location.coordinates;
     const matchedBloodBanks = nearbyBloodBanks.map(bank => {
       const [bankLng, bankLat] = bank.location.coordinates;
@@ -62,12 +60,8 @@ exports.createBloodRequest = async (req, res) => {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const distanceKm = Math.round(6371 * c * 10) / 10;
 
-      const matchingItems = bank.inventory.filter(
-        item => compatibleGroups.includes(item.bloodGroup) && item.unitsAvailable > 0
-      );
-      const exactMatch = matchingItems.find(i => i.bloodGroup === bloodGroup);
-      const primaryGroup = exactMatch ? exactMatch.bloodGroup : matchingItems[0]?.bloodGroup;
-      const primaryUnits = exactMatch ? exactMatch.unitsAvailable : matchingItems[0]?.unitsAvailable;
+      const exactMatch = bank.inventory.find(i => i.bloodGroup === bloodGroup && i.unitsAvailable > 0);
+      const units = exactMatch ? exactMatch.unitsAvailable : 0;
 
       return {
         bloodBank: bank._id,
@@ -75,19 +69,15 @@ exports.createBloodRequest = async (req, res) => {
         address: bank.address,
         phone: bank.phone,
         distanceKm,
-        unitsAvailable: primaryUnits || 0,
-        bloodGroup: primaryGroup || bloodGroup,
-        matchTier: exactMatch ? 1 : 2,
-        matchLabel: exactMatch ? `Exact Match (${bloodGroup})` : `Compatible Match (${primaryGroup})`,
-        availableStock: matchingItems.map(m => ({
-          bloodGroup: m.bloodGroup,
-          unitsAvailable: m.unitsAvailable
-        }))
+        unitsAvailable: units,
+        bloodGroup: bloodGroup,
+        matchTier: 1,
+        matchLabel: `Exact Match (${bloodGroup})`
       };
     });
 
-    // Sort by Match Tier (Exact match first), then distance
-    matchedBloodBanks.sort((a, b) => a.matchTier - b.matchTier || a.distanceKm - b.distanceKm);
+    // Sort by proximity distance
+    matchedBloodBanks.sort((a, b) => a.distanceKm - b.distanceKm);
 
     bloodRequest.matchedBloodBanks = matchedBloodBanks;
     await bloodRequest.save();

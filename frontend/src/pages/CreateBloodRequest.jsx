@@ -2,17 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import API from '../services/api';
 
-const COMPATIBILITY_MAP = {
-  'A+':  ['A+', 'A-', 'O+', 'O-'],
-  'A-':  ['A-', 'O-'],
-  'B+':  ['B+', 'B-', 'O+', 'O-'],
-  'B-':  ['B-', 'O-'],
-  'AB+': ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-'],
-  'AB-': ['AB-', 'A-', 'B-', 'O-'],
-  'O+':  ['O+', 'O-'],
-  'O-':  ['O-']
-};
-
 const CreateBloodRequest = () => {
   const navigate = useNavigate();
   const locationHook = useLocation();
@@ -37,8 +26,6 @@ const CreateBloodRequest = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successResult, setSuccessResult] = useState(null);
-
-  const compatibleList = COMPATIBILITY_MAP[formData.bloodGroup] || [formData.bloodGroup];
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -95,11 +82,11 @@ const CreateBloodRequest = () => {
           <div className="card shadow-sm border-0 border-top border-4 border-danger">
             <div className="card-body p-4">
               <div className="d-flex align-items-center mb-3">
-                <span className="fs-1 me-3">🧠</span>
+                <span className="fs-1 me-3">🚨</span>
                 <div>
-                  <h3 className="fw-bold mb-0 text-danger">Smart Emergency Blood Broadcast</h3>
+                  <h3 className="fw-bold mb-0 text-danger">Emergency Blood Request Broadcast</h3>
                   <p className="text-muted small mb-0">
-                    Powered by the Universal Blood Transfusion Compatibility Engine across 2,439+ verified blood banks.
+                    Instantly searches and alerts nearby verified blood banks holding stock for your requested blood group.
                   </p>
                 </div>
               </div>
@@ -112,7 +99,7 @@ const CreateBloodRequest = () => {
                     <h4 className="fw-bold text-success mb-2">✓ Broadcast Dispatched Successfully!</h4>
                     <p className="mb-2">
                       Matched <strong>{successResult.matchedBanksCount || 0} verified blood bank(s)</strong> within{' '}
-                      {formData.radius / 1000} km with compatible units on hand for <strong>{formData.bloodGroup}</strong>.
+                      {formData.radius / 1000} km with available units on hand for <strong>{formData.bloodGroup}</strong>.
                     </p>
                   </div>
 
@@ -120,7 +107,7 @@ const CreateBloodRequest = () => {
                   {successResult.matchedBloodBanks && successResult.matchedBloodBanks.length > 0 && (
                     <div className="card border-0 shadow-sm mb-4 bg-light">
                       <div className="card-header bg-danger text-white py-2">
-                        <h6 className="fw-bold mb-0">🏥 Matched Blood Banks with Compatible Stock:</h6>
+                        <h6 className="fw-bold mb-0">🏥 Matched Blood Banks with {formData.bloodGroup} in Stock:</h6>
                       </div>
                       <div className="card-body p-3">
                         <div className="list-group">
@@ -198,31 +185,6 @@ const CreateBloodRequest = () => {
                         required
                       />
                     </div>
-                  </div>
-
-                  {/* Compatibility Assistant Box */}
-                  <div className="p-3 bg-light rounded border border-info mb-3">
-                    <div className="d-flex align-items-center mb-1">
-                      <span className="badge bg-info text-dark me-2">Medical Compatibility Rule</span>
-                      <small className="text-muted fw-semibold">
-                        A patient with <strong>{formData.bloodGroup}</strong> can safely receive red blood cells from:
-                      </small>
-                    </div>
-                    <div className="d-flex flex-wrap gap-1 mt-2">
-                      {compatibleList.map((bg) => (
-                        <span
-                          key={bg}
-                          className={`badge px-2 py-1 ${
-                            bg === formData.bloodGroup ? 'bg-danger fs-6' : 'bg-secondary'
-                          }`}
-                        >
-                          {bg === formData.bloodGroup ? `⭐ ${bg} (Exact)` : bg}
-                        </span>
-                      ))}
-                    </div>
-                    <small className="text-muted d-block mt-2" style={{ fontSize: '0.75rem' }}>
-                      The system automatically cascades from exact match to compatible groups and applies 90-day cooldown checks.
-                    </small>
                   </div>
 
                   <div className="row g-3 mb-3">

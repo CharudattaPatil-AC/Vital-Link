@@ -61,18 +61,6 @@ const BloodRequestCard = ({ request, onCancel }) => {
           </div>
         </div>
 
-        {/* Compatible groups badge line */}
-        {compatibleGroups && compatibleGroups.length > 0 && (
-          <div className="small text-muted mb-3">
-            <strong>Transfusion Compatible Groups: </strong>
-            {compatibleGroups.map(bg => (
-              <span key={bg} className="badge bg-light text-dark border me-1">
-                {bg}
-              </span>
-            ))}
-          </div>
-        )}
-
         <div className="row g-2 mb-3 bg-light p-3 rounded">
           <div className="col-sm-6 col-md-3">
             <span className="text-muted small d-block">Units Needed:</span>
@@ -95,7 +83,7 @@ const BloodRequestCard = ({ request, onCancel }) => {
         {/* Matched Blood Banks */}
         <div className="mt-3">
           <h6 className="fw-bold text-dark d-flex align-items-center justify-content-between">
-            <span>🏥 Matched Blood Banks with Compatible Stock ({matchedBloodBanks?.length || 0}):</span>
+            <span>🏥 Matched Blood Banks with {bloodGroup} in Stock ({matchedBloodBanks?.length || 0}):</span>
           </h6>
           {matchedBloodBanks && matchedBloodBanks.length > 0 ? (
             <div className="row g-2 mt-1">

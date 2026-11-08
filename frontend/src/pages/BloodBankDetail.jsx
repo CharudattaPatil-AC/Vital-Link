@@ -3,17 +3,6 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import API from '../services/api';
 import { useSocket } from '../context/SocketContext';
 
-const COMPATIBILITY_MAP = {
-  'A+':  ['A+', 'A-', 'O+', 'O-'],
-  'A-':  ['A-', 'O-'],
-  'B+':  ['B+', 'B-', 'O+', 'O-'],
-  'B-':  ['B-', 'O-'],
-  'AB+': ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-'],
-  'AB-': ['AB-', 'A-', 'B-', 'O-'],
-  'O+':  ['O+', 'O-'],
-  'O-':  ['O-']
-};
-
 const BloodBankDetail = () => {
   const { id } = useParams();
   const socket = useSocket();
@@ -99,30 +88,19 @@ const BloodBankDetail = () => {
         </div>
       </div>
 
-      {/* Patient Specific Request & Clinical Compatibility Assistant */}
+      {/* Patient Specific Request Filter */}
       {requestedGroup && (
-        <div className="alert alert-danger bg-white border border-danger shadow-sm p-4 mb-4 rounded">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
-              <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                <span className="badge bg-danger fs-6 px-3 py-2">Patient Need: {requestedGroup}</span>
-                <span className="badge bg-secondary">Emergency Transfusion Protocol</span>
-              </div>
-              <p className="small text-muted mb-2">
-                Showing exact match (<strong>{requestedGroup}</strong>) and clinically compatible donor groups (
-                {(COMPATIBILITY_MAP[requestedGroup] || [requestedGroup]).join(', ')}).
-              </p>
-              <div className="small text-danger fw-semibold" style={{ fontSize: '0.8rem' }}>
-                ⚕️ <strong>Clinical Verification Notice:</strong> Compatibility matching provides software-assisted emergency discovery. Actual blood transfusion is strictly subject to laboratory cross-matching and clinical clearance by attending doctors.
-              </div>
-            </div>
-            <button
-              className="btn btn-outline-danger btn-sm text-nowrap fw-bold align-self-start align-self-md-center"
-              onClick={() => setShowAllGroups(!showAllGroups)}
-            >
-              {showAllGroups ? '🎯 Show Compatible Only' : '📋 Show All 8 Groups'}
-            </button>
+        <div className="alert alert-light border border-danger shadow-sm p-3 mb-4 rounded d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <span className="badge bg-danger fs-6 px-3 py-2 me-2">Requested Group: {requestedGroup}</span>
+            <span className="small text-muted">Showing available stock for patient's requested blood group.</span>
           </div>
+          <button
+            className="btn btn-outline-danger btn-sm fw-semibold"
+            onClick={() => setShowAllGroups(!showAllGroups)}
+          >
+            {showAllGroups ? `🎯 Show ${requestedGroup} Only` : '📋 Show All 8 Groups'}
+          </button>
         </div>
       )}
 
@@ -150,23 +128,20 @@ const BloodBankDetail = () => {
               </thead>
               <tbody>
                 {(() => {
-                  const compatibleGroups = requestedGroup ? (COMPATIBILITY_MAP[requestedGroup] || [requestedGroup]) : null;
                   const visibleInventory = (requestedGroup && !showAllGroups && bloodBank.inventory)
-                    ? bloodBank.inventory.filter((item) => compatibleGroups.includes(item.bloodGroup))
+                    ? bloodBank.inventory.filter((item) => item.bloodGroup === requestedGroup)
                     : bloodBank.inventory;
 
                   return visibleInventory && visibleInventory.length > 0 ? (
                     visibleInventory.map((item) => {
-                      const isExact = item.bloodGroup === requestedGroup;
-                      const isCompatible = compatibleGroups && compatibleGroups.includes(item.bloodGroup);
+                      const isRequested = item.bloodGroup === requestedGroup;
 
                       return (
-                        <tr key={item.bloodGroup} className={isExact ? 'table-warning' : ''}>
+                        <tr key={item.bloodGroup} className={isRequested ? 'table-warning' : ''}>
                           <td>
                             <div className="d-flex align-items-center gap-2">
                               <span className="badge bg-danger fs-6 px-3">{item.bloodGroup}</span>
-                              {isExact && <span className="badge bg-success">⭐ Exact Requested Match</span>}
-                              {!isExact && isCompatible && <span className="badge bg-info text-dark">Clinically Compatible</span>}
+                              {isRequested && <span className="badge bg-success">⭐ Requested Group</span>}
                             </div>
                           </td>
                           <td className="fw-bold fs-5">{item.unitsAvailable} Units</td>
@@ -194,7 +169,7 @@ const BloodBankDetail = () => {
                     <tr>
                       <td colSpan="4" className="text-center text-muted py-4">
                         {requestedGroup && !showAllGroups
-                          ? `No units currently reported in stock for ${requestedGroup} or compatible groups (${(COMPATIBILITY_MAP[requestedGroup] || []).join(', ')}). Click 'Show All 8 Groups' to view other inventory.`
+                          ? `No units currently reported in stock for ${requestedGroup}. Click 'Show All 8 Groups' to view other inventory.`
                           : 'No inventory listed.'}
                       </td>
                     </tr>
