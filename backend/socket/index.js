@@ -9,14 +9,6 @@ module.exports = (io) => {
         socket.join(`user_${data.userId}`);
         console.log(`Socket ${socket.id} joined room user_${data.userId}`);
       }
-      // if (data.facilityId) {
-      //   socket.join(`facility_${data.facilityId}`);
-      //   console.log(`Socket ${socket.id} joined room facility_${data.facilityId}`);
-      // }
-      // if (data.role === 'donor') {
-      //   socket.join('donors');
-      //   console.log(`Socket ${socket.id} joined donors room`);
-      // }
     });
 
     socket.on('disconnect', () => {

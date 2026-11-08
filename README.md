@@ -216,7 +216,7 @@ VitalLink/
 │   ├── socket/
 │   │   └── index.js                    # Socket.IO connection handling & rooms
 │   ├── utils/
-│   │   └── bloodCompatibility.js       # Transfusion matrix & compatibility tiers
+│   │   └── istTime.js                  # Indian Standard Time (IST) timestamp formatter
 │   ├── .env                            # Backend configuration (PORT, MONGO_URI, JWT_SECRET)
 │   ├── package.json                    # Backend dependencies & npm scripts
 │   ├── seed.js                         # Database seeder (2,439 blood banks, hospitals, users)
