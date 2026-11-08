@@ -134,15 +134,7 @@ exports.updateInventory = async (req, res) => {
 // GET /api/bloodbanks/my - Get blood bank managed by current user
 exports.getMyBloodBank = async (req, res) => {
   try {
-    let bloodBank = await BloodBank.findOne({ managedBy: req.user._id });
-    if (!bloodBank && (req.user.role === 'bloodbank' || req.user.role === 'admin')) {
-      // Automatically assign the flagship city blood bank to this admin so dashboard is ready
-      bloodBank = (await BloodBank.findOne({ name: { $regex: 'Red Cross|Central|City', $options: 'i' } })) || (await BloodBank.findOne({}));
-      if (bloodBank) {
-        bloodBank.managedBy = req.user._id;
-        await bloodBank.save();
-      }
-    }
+    const bloodBank = await BloodBank.findOne({ managedBy: req.user._id });
     if (!bloodBank) {
       return res.status(404).json({ message: 'No blood bank found for this user' });
     }

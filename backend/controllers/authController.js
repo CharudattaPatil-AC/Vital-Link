@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Hospital = require('../models/Hospital');
+const BloodBank = require('../models/BloodBank');
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -36,6 +38,45 @@ exports.register = async (req, res) => {
     }
 
     const user = await User.create(userData);
+
+    // If new user is a Hospital or Blood Bank manager, create their facility record linked to their ID
+    const facilityLocation = (location && location.coordinates && location.coordinates.length === 2 && (location.coordinates[0] !== 0 || location.coordinates[1] !== 0))
+      ? { type: 'Point', coordinates: location.coordinates }
+      : { type: 'Point', coordinates: [77.2090, 28.6139] };
+
+    if (user.role === 'bloodbank') {
+      const defaultInventory = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => ({
+        bloodGroup: bg,
+        unitsAvailable: 10
+      }));
+      await BloodBank.create({
+        name: `${user.name} Blood Center`,
+        email: user.email,
+        phone: user.phone,
+        address: 'Facility Wing, Main Road',
+        location: facilityLocation,
+        managedBy: user._id,
+        verified: true,
+        inventory: defaultInventory
+      });
+    } else if (user.role === 'hospital') {
+      await Hospital.create({
+        name: `${user.name} Emergency Hospital`,
+        email: user.email,
+        phone: user.phone,
+        address: 'Hospital Emergency Wing, Main Road',
+        location: facilityLocation,
+        managedBy: user._id,
+        verified: true,
+        operatingHours: '24/7',
+        resources: {
+          icuBeds: { total: 20, available: 5 },
+          generalBeds: { total: 100, available: 25 },
+          oxygenCylinders: { total: 50, available: 15 },
+          ventilators: { total: 10, available: 3 }
+        }
+      });
+    }
 
     const token = generateToken(user._id, user.role);
 

@@ -138,14 +138,7 @@ exports.updateInventory = async (req, res) => {
 // GET /api/hospitals/my - Get hospital managed by current user
 exports.getMyHospital = async (req, res) => {
   try {
-    let hospital = await Hospital.findOne({ managedBy: req.user._id });
-    if (!hospital && (req.user.role === 'hospital' || req.user.role === 'admin')) {
-      hospital = (await Hospital.findOne({ name: { $regex: 'Apollo|AIIMS|Fortis', $options: 'i' } })) || (await Hospital.findOne({}));
-      if (hospital) {
-        hospital.managedBy = req.user._id;
-        await hospital.save();
-      }
-    }
+    const hospital = await Hospital.findOne({ managedBy: req.user._id });
     if (!hospital) {
       return res.status(404).json({ message: 'No hospital found for this user' });
     }
